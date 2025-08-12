@@ -2,8 +2,11 @@
 const admin = require('firebase-admin');
 const moment = require("moment");
 
-// important firebase project
-const serviceAccount = require("../firebase.json");
+const serviceAccount  = {
+    projectId: process.env.firebase_projectId,
+    clientEmail: process.env.firebase_client_email,
+    privateKey: process.env.firebase_private_key.replace(/\\n/g, '\n')
+}
 
 // Importing models
 const userNotificationModel = require("../model/userNotificationModel");
