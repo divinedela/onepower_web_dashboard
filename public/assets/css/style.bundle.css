@@ -5684,7 +5684,7 @@ fieldset:disabled .btn {
 .active>.page-link {
   z-index: 3;
   color: #f2680c;
-  background-color: #f2680c;
+  background-color: #e8ca68;
   border-color: var(--bs-pagination-active-border-color);
 }
 
@@ -41424,8 +41424,8 @@ h6,
 
 .btn.btn-primary {
   color: #E6F4E7;
-  border-color: #f2680c;
-  background-color: #f2680c;
+  border-color: #e8ca68;
+  background-color: #e8ca68;
 }
 
 .btn.btn-primary i,
@@ -59387,12 +59387,12 @@ a:hover {
 [data-bs-theme=light] {
   --bs-app-bg-color: #FEF2EE;
   --bs-app-blank-bg-color: #ffffff;
-  --bs-app-header-base-bg-color: #FEF2EE;
+  --bs-app-header-base-bg-color: #f0eee8;
   --bs-app-toolbar-base-bg-color: #ffffff;
-  --bs-app-sidebar-base-bg-color: #FEF2EE;
+  --bs-app-sidebar-base-bg-color: #f0eee8;
   --bs-app-sidebar-base-box-shadow: none;
-  --bs-app-sidebar-minimize-bg-color: #FEF2EE;
-  --bs-app-aside-base-bg-color: #FEF2EE;
+  --bs-app-sidebar-minimize-bg-color: #f0eee8;
+  --bs-app-aside-base-bg-color: #f0eee8;
   --bs-app-aside-base-box-shadow: none;
 }
 
@@ -61421,7 +61421,7 @@ body,
 }
 
 [data-bs-theme=light] {
-  --bs-app-sidebar-link-bg-color: #ffe8d9;
+  --bs-app-sidebar-link-bg-color: #c9a84e;
   --bs-app-separator-border: 1px solid #E1E3EA;
   --bs-app-content-bg-color: #ffffff;
 }
@@ -61668,13 +61668,13 @@ body,
 }
 
 .app-sidebar .menu>.menu-item>.menu-link.active .menu-title {
-  color: #f2680c
+  color: #191919;
 }
 
 .app-sidebar .menu>.menu-item>.menu-link.active .menu-icon,
 .app-sidebar .menu>.menu-item>.menu-link.active .menu-icon .svg-icon,
 .app-sidebar .menu>.menu-item>.menu-link.active .menu-icon i {
-  color: #f2680c
+  color: #191919;
 }
 
 .app-sidebar .menu>.menu-item>.menu-link.active .menu-bullet .bullet {
@@ -61847,7 +61847,7 @@ body,
 }
 
 .app-sidebar .menu>.menu-item .menu-item .menu-link.active .menu-title {
-  color: #f2680c;
+  color: #191919;
 }
 
 .app-sidebar .menu>.menu-item .menu-item .menu-link.active .menu-icon,
@@ -61857,7 +61857,7 @@ body,
 }
 
 .app-sidebar .menu>.menu-item .menu-item .menu-link.active .menu-bullet .bullet {
-  background-color: #f2680c;
+  background-color: #191919;
 }
 
 .app-sidebar .menu>.menu-item .menu-item .menu-link.active .menu-arrow:after {
@@ -62315,7 +62315,7 @@ Table>tbody>tr.child ul.dtr-details>li {
 
 /* custom notification */
 .text-notification-primary {
-  color: #f2680c !important;
+  color: #e8ca68 !important;
 }
 
 .btn-color-icon-primary i {
@@ -62331,7 +62331,7 @@ Table>tbody>tr.child ul.dtr-details>li {
 }
 
 .btn.btn-color-warning i {
-  color: #f2680c !important;
+  color: #191919 !important;
 }
 
 .bg-orange {
@@ -62339,11 +62339,11 @@ Table>tbody>tr.child ul.dtr-details>li {
 }
 
 .text-orange {
-  color: #f2680c !important
+  color: #191919 !important
 }
 
 .bg-gray-100 {
-  background-color: #fef0e7 !important;
+  background-color: #e8e6e0 !important;
 }
 
 .btn-light-orange {
@@ -62351,5 +62351,5 @@ Table>tbody>tr.child ul.dtr-details>li {
 }
 
 .text-notification-primary {
-  color: #F08050 !important;
+  color: #e8ca68 !important;
 }

@@ -6,30 +6,46 @@
   <!--begin::Authentication - Sign-in -->
   <div class="d-flex flex-column flex-lg-row flex-column-fluid">
     <!--begin::Aside-->
-    <div class="d-flex flex-column flex-lg-row-auto bg-primary-info w-xl-600px positon-xl-relative">
+    <div
+      class="d-flex flex-column flex-lg-row-auto bg-primary-info w-xl-600px positon-xl-relative"
+    >
       <!--begin::Wrapper-->
-      <div class="d-flex flex-column position-xl-fixed top-0 bottom-0 w-xl-600px scroll-y">
+      <div
+        class="d-flex flex-column position-xl-fixed top-0 bottom-0 w-xl-600px scroll-y"
+      >
         <!--begin::Header-->
-        <div class="d-flex flex-row-fluid flex-column text-center p-5 p-lg-10 pt-lg-20">
+        <div
+          class="d-flex flex-row-fluid flex-column text-center p-5 p-lg-10 pt-lg-20"
+        >
           <!--begin::Logo-->
           <a class="py-2 py-lg-20">
-            <img alt="Logo" src="assets/media/logos/image.png" class="h-90px h-lg-100px">                     
-        </a>
+            <img
+              alt="Logo"
+              src="assets/media/logos/image.png"
+              class="h-90px h-lg-100px"
+            />
+          </a>
           <!--end::Logo-->
           <!--begin::Title-->
-          <h1 class="d-none d-lg-block fw-bold text-white fs-2x pb-5 pb-md-10">Welcome to charity & funding</h1>
+          <h1 class="d-none d-lg-block fw-bold text-white fs-2x pb-5 pb-md-10">
+            Welcome to Onepower Foundation
+          </h1>
           <!--end::Title-->
           <!--begin::Description-->
           <p class="d-none d-lg-block fw-semibold fs-3 text-white">
-            Make a difference by supporting meaningful causes, planning your contributions, and easily monitoring the impact of your donations on our Charity & Funding platform.
-        </p>
-          
-          <!--end::Description-->
+            We are more than a nonprofit — we are a movement. 
+          </p>
 
+          <!--end::Description-->
         </div>
         <!--end::Header-->
         <!--begin::Illustration-->
-        <div class="d-none d-lg-block d-flex flex-row-auto bgi-no-repeat bgi-position-x-center bgi-size-contain bgi-position-y-bottom min-h-100px min-h-lg-450px" style="background-image: url(assets/media/illustrations/Non-profit.png)"></div>
+        <div
+          class="d-none d-lg-block d-flex flex-row-auto bgi-no-repeat bgi-position-x-center bgi-size-contain bgi-position-y-bottom min-h-100px min-h-lg-450px"
+          style="
+            background-image: url(assets/media/illustrations/Non-profit.png);
+          "
+        ></div>
         <!--end::Illustration-->
       </div>
       <!--end::Wrapper-->
@@ -47,7 +63,7 @@
               <!--begin::Heading-->
               <div class="text-center mb-10">
                 <!--begin::Title-->
-                <h1 class="text-dark mb-3">Sign In Charity & Funding</h1>
+                <h1 class="text-dark mb-3">Sign In</h1>
                 <!--end::Title-->
               </div>
               <!--begin::Heading-->
@@ -55,13 +71,24 @@
               <!-- flash message -->
               <% if(flash.error.length> 0){ %>
               <!--begin::Alert-->
-              <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
+              <div
+                class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10"
+              >
                 <!--begin::Content-->
-                <span class="fs-6 text-danger fw-bold text-center ps-5 fw-bolder"><%= flash.error %></span>
+                <span
+                  class="fs-6 text-danger fw-bold text-center ps-5 fw-bolder"
+                  ><%= flash.error %></span
+                >
                 <!--end::Content-->
                 <!--begin::Close-->
-                <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
-                  <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                <button
+                  type="button"
+                  class="btn btn-icon ms-sm-auto"
+                  data-bs-dismiss="alert"
+                >
+                  <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"
+                    ><span class="path1"></span><span class="path2"></span
+                  ></i>
                 </button>
                 <!--end::Close-->
               </div>
@@ -72,11 +99,18 @@
               <!-- begin::Input group -->
               <div class="fv-row mb-10">
                 <!-- begin::Label -->
-                <label class="form-label fw-semibold fs-6 mb-2 required">Email</label>
+                <label class="form-label fw-semibold fs-6 mb-2 required"
+                  >Email</label
+                >
                 <!-- end::Label -->
 
                 <!--begin::Input-->
-                <input class="form-control form-control-lg form-control-solid" type="email" name="email"  required/>
+                <input
+                  class="form-control form-control-lg form-control-solid"
+                  type="email"
+                  name="email"
+                  required
+                />
                 <!--end::Input-->
               </div>
               <!--end::Input group-->
@@ -86,20 +120,35 @@
                 <!--begin::Wrapper-->
 
                 <!--begin::Label-->
-                <label class="form-label fw-semibold fs-6 mb-2 required"> Password </label>
+                <label class="form-label fw-semibold fs-6 mb-2 required">
+                  Password
+                </label>
                 <!--end::Label-->
 
                 <!--begin::Input wrapper-->
                 <div class="position-relative mb-3">
-                  <input class="form-control form-control-lg form-control-solid" type="password" name="password"  required/>
+                  <input
+                    class="form-control form-control-lg form-control-solid"
+                    type="password"
+                    name="password"
+                    required
+                  />
 
-                  <span class="btn btn-sm btn-icon position-absolute translate-middle top-50 end-0 me-n2" data-kt-password-meter-control="visibility">
-                    <i class="ki-duotone ki-eye-slash fs-1"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span></i>
-                    <i class="ki-duotone ki-eye d-none fs-1"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
+                  <span
+                    class="btn btn-sm btn-icon position-absolute translate-middle top-50 end-0 me-n2"
+                    data-kt-password-meter-control="visibility"
+                  >
+                    <i class="ki-duotone ki-eye-slash fs-1"
+                      ><span class="path1"></span><span class="path2"></span
+                      ><span class="path3"></span><span class="path4"></span
+                    ></i>
+                    <i class="ki-duotone ki-eye d-none fs-1"
+                      ><span class="path1"></span><span class="path2"></span
+                      ><span class="path3"></span
+                    ></i>
                   </span>
                 </div>
                 <!--end::Input wrapper-->
-
               </div>
               <!--end::Wrapper-->
 
@@ -110,7 +159,6 @@
                   <span class="indicator-label">Continue</span>
                 </button>
                 <!--end::Submit button-->
-
               </div>
               <!--end::Actions-->
             </form>
@@ -120,14 +168,12 @@
         </div>
       </div>
       <!--end::Content-->
-
     </div>
     <!--end::Body-->
   </div>
   <!--end::Authentication - Sign-in-->
 </div>
 <!--end::Root-->
-
 
 <!-- layouts:/footer -->
 <%- include('../layouts/footer.ejs') %>
