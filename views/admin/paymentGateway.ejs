@@ -1,0 +1,583 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+  <!--begin::Page-->
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <!--begin::navbar-->
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <!--begin::navbar main-->
+      <%- include('../layouts/navbar.ejs') %>
+      <!--end::navbar main-->
+      <!--begin::Separator-->
+      <div class="app-header-separator"></div>
+      <!--end::Separator-->
+    </div>
+    <!--end::navbar-->
+
+    <!--begin::Wrapper-->
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <!--begin::Sidebar-->
+      <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <!--begin::Main-->
+        <%- include('../layouts/sidebar.ejs') %>
+        <!--end::Main-->
+      </div>
+      <!--end::Sidebar-->
+
+      <!--begin::Main-->
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <!--begin::Content wrapper-->
+        <div class="d-flex flex-column flex-column-fluid">
+          <!--begin::Toolbar-->
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <!--begin::Toolbar container-->
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <!--begin::Toolbar wrapper-->
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <!--begin::Page title-->
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <!--begin::Breadcrumb-->
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a href="" class="text-gray-500">
+                        <i class="fa-solid fa-coins fs-3"></i>
+                      </a>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Payment</li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700">View All Gateway</li>
+                    <!--end::Item-->
+                  </ul>
+                  <!--end::Breadcrumb-->
+                  <!--begin::Title-->
+                  <h1 class="page-heading d-flex flex-column justify-content-center text-dark fw-bolder fs-1 lh-0">Payment Gateway</h1>
+                  <!--end::Title-->
+                </div>
+                <!--end::Page title-->
+              </div>
+              <!--end::Toolbar wrapper-->
+            </div>
+            <!--end::Toolbar container-->
+          </div>
+          <!--end::Toolbar-->
+
+          <!--begin::Content-->
+          <div id="kt_app_content" class="app-content flex-column-fluid">
+
+            <!--begin::Content container-->
+            <div id="kt_app_content_container" class="app-container container-fluid">
+
+
+              <!-- flash message -->
+              <% if(flash.error.length> 0){ %>
+              <!--begin::Alert-->
+              <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
+                <!--begin::Content-->
+                <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
+                <!--end::Content-->
+                <!--begin::Close-->
+                <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                  <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                </button>
+                <!--end::Close-->
+              </div>
+              <!--end::Alert-->
+              <% } %>
+              <!-- complete flash message -->
+
+              <!-- flash message -->
+              <% if(flash.success.length> 0){ %>
+              <!--begin::Alert-->
+              <div class="alert alert-dismissible bg-light-success d-flex align-items-center mb-10">
+                <!--begin::Content-->
+                <span class="fs-4 text-success fw-bold text-center ps-5"><%= flash.success %></span>
+                <!--end::Content-->
+                <!--begin::Close-->
+                <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                  <i class="ki-duotone ki-cross fs-1 text-success fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                </button>
+                <!--end::Close-->
+              </div>
+              <!--end::Alert-->
+              <% } %>
+              <!-- complete flash message -->
+
+              <!-- begin::row -->
+              <div class="row gx-5 gx-xl-10">
+
+                <!--begin::Col-->
+                <div class="col-xxl-12 mb-5 mb-xl-10">
+
+                  <!--begin::card-->
+                  <div class="card card-flush">
+
+                    <!--begin::Card header-->
+                    <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
+
+                      <!--begin::Card title-->
+                      <div class="card-title m-0">
+                        <h3 class="fw-bolder m-0 fs-1">Paypal</h3>
+                      </div>
+                      <!--end::Card title-->
+
+                    </div>
+                    <!--begin::Card header-->
+
+                    <!--begin::Content-->
+                    <div id="kt_account_settings_profile_details" class="collapse show">
+
+                      <!--begin::Form-->
+                      <form class="form" method="post" action="<%= process.env.BASE_URL %>edit-paypal-payment-method" id="payment_gateway_paypal_form">
+
+                        <!--begin::Card body-->
+                        <div class="card-body border-top p-9">
+
+                          <!--begin::Input group-->
+                          <input type="hidden" name="id" value="<%= paymentMethodDetails && paymentMethodDetails._id ? paymentMethodDetails._id : '' %>">
+                          <!--end::Input group-->
+
+                          <!--begin::Input group-->
+                          <div class="row mb-5">
+                            <label class="col-lg-2 required col-form-label fw-semibold fs-6">Enable/Disable</label>
+                            <div class="col-lg-10 fv-row">
+                              <label class="form-check form-switch form-check-custom">
+                                <input class="form-check-input" type="checkbox" value="1" name="paypal_is_enable" <%= paymentMethodDetails && paymentMethodDetails.paypal_is_enable == 1 ? 'checked' : '' %>>
+                              </label>
+                            </div>
+                          </div>
+                          <!--end::Input group-->
+
+                          <!--begin::Input group-->
+                          <div class="row mb-8">
+                            <label class="col-lg-2 required col-form-label fw-semibold fs-6">Mode</label>
+                            <div class="col-lg-10 fv-row d-flex">
+                              <label class="form-check form-check-custom  pe-20">
+                                <input id="paypal_testModeRadio" class="form-check-input" type="radio" name="paypal_mode" value="testMode" <%=  !paymentMethodDetails || paymentMethodDetails.paypal_mode === 'testMode' || paymentMethodDetails.paypal_mode !== 'liveMode' ? 'checked' : '' %> />
+                                <span class="form-check-label fw-semibold fs-5">Test Mode</span>
+                              </label>
+                              <label class="form-check form-check-custom">
+                                <input id="paypal_liveModeRadio" class="form-check-input" type="radio" name="paypal_mode" value="liveMode" <% if(paymentMethodDetails && paymentMethodDetails.paypal_mode === 'liveMode') { %> checked <% } %> />
+                                <span class="form-check-label fw-semibold fs-5" id="paypal_modeLabel">Live Mode</span>
+                              </label>
+                            </div>
+                          </div>
+                          <!--end::Input group-->
+
+                          <div id="paypal_test_mode_inputs">
+
+                            <!--begin::Input group-->
+                            <div class="row mb-10">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Merchant ID</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="paypal_test_mode_merchant_id" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_test_mode_merchant_id ? paymentMethodDetails.paypal_test_mode_merchant_id : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-10">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Tokenization Key</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="paypal_test_mode_tokenization_key" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_test_mode_tokenization_key ? paymentMethodDetails.paypal_test_mode_tokenization_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-10">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Public Key</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="paypal_test_mode_public_key" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_test_mode_public_key ? paymentMethodDetails.paypal_test_mode_public_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Private Key</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="paypal_test_mode_private_key" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_test_mode_private_key ? paymentMethodDetails.paypal_test_mode_private_key : '' %>" />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                          </div>
+
+                          <div id="paypal_live_mode_inputs">
+
+                            <!--begin::Input group-->
+                            <div class="row mb-10">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Merchant ID</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="paypal_live_mode_merchant_id" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_live_mode_merchant_id ? paymentMethodDetails.paypal_live_mode_merchant_id : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-10">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Tokenization Key</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="paypal_live_mode_tokenization_key" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_live_mode_tokenization_key ? paymentMethodDetails.paypal_live_mode_tokenization_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row mb-10">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Public Key</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="paypal_live_mode_public_key" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_live_mode_public_key ? paymentMethodDetails.paypal_live_mode_public_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row">
+                              <label class="col-lg-2 required col-form-label fw-semibold fs-6">Private Key</label>
+                              <div class="col-lg-10 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="paypal_live_mode_private_key" value="<%= paymentMethodDetails && paymentMethodDetails.paypal_live_mode_private_key ? paymentMethodDetails.paypal_live_mode_private_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                          </div>
+
+                        </div>
+                        <!--end::Card body-->
+
+                        <!--begin::Actions-->
+                        <div class="card-footer d-flex justify-content-start px-9">
+                          <button type="submit" class="btn btn-primary me-5">Save</button>
+                        </div>
+                        <!--end::Actions-->
+
+                      </form>
+                      <!--end::Form-->
+
+                    </div>
+                    <!--end::Content-->
+
+                  </div>
+                  <!--end::card-->
+
+                </div>
+                <!--end::Col-->
+
+              </div>
+              <!-- end::row -->
+
+              <!-- begin::row -->
+              <div class="row gx-5 gx-xl-10">
+
+                <!--begin::Col-->
+                <div class="col-xxl-6 mb-5 mb-xl-10">
+
+                  <!--begin::card-->
+                  <div class="card card-flush">
+
+                    <!--begin::Card header-->
+                    <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
+
+                      <!--begin::Card title-->
+                      <div class="card-title m-0">
+                        <h3 class="fw-bolder m-0 fs-1">Stripe</h3>
+                      </div>
+                      <!--end::Card title-->
+
+                    </div>
+                    <!--begin::Card header-->
+
+                    <!--begin::Content-->
+                    <div id="kt_account_settings_profile_details" class="collapse show">
+
+                      <!--begin::Form-->
+                      <form class="form" method="post" action="<%= process.env.BASE_URL %>edit-stripe-payment-method" id="payment_gateway_strip_form">
+
+                        <!--begin::Card body-->
+                        <div class="card-body border-top p-9">
+
+                          <!--begin::Input group-->
+                          <input type="hidden" name="id" value="<%= paymentMethodDetails && paymentMethodDetails._id ? paymentMethodDetails._id : '' %>">
+                          <!--end::Input group-->
+
+                          <!--begin::Input group-->
+                          <div class="row mb-5">
+                            <label class="col-lg-3 required col-form-label fw-semibold fs-6">Enable/Disable</label>
+                            <div class="col-lg-9 fv-row">
+                              <label class="form-check form-switch form-check-custom">
+                                <input class="form-check-input" type="checkbox" value="1" name="stripe_is_enable" <%= paymentMethodDetails && paymentMethodDetails.stripe_is_enable == 1 ? 'checked' : '' %>>
+                              </label>
+                            </div>
+                          </div>
+                          <!--end::Input group-->
+
+                          <!--begin::Input group-->
+                          <div class="row mb-8">
+                            <label class="col-lg-3 required col-form-label fw-semibold fs-6">Mode</label>
+                            <div class="col-lg-9 fv-row d-flex">
+                              <label class="form-check form-check-custom  pe-20">
+                                <input id="stripe_testModeRadio" class="form-check-input" type="radio" name="stripe_mode" value="testMode" <%=  !paymentMethodDetails || paymentMethodDetails.stripe_mode === 'testMode' || paymentMethodDetails.stripe_mode !== 'liveMode' ? 'checked' : '' %> />
+                                <span class="form-check-label fw-semibold fs-5">Test Mode</span>
+                              </label>
+                              <label class="form-check form-check-custom">
+                                <input id="stripe_liveModeRadio" class="form-check-input" type="radio" name="stripe_mode" value="liveMode" <%=  paymentMethodDetails &&  paymentMethodDetails.stripe_mode === 'liveMode' ? 'checked' : '' %> />
+                                <span class="form-check-label fw-semibold fs-5">Live Mode</span>
+                              </label>
+                            </div>
+                          </div>
+                          <!--end::Input group-->
+
+                          <div id="test_mode_inputs">
+
+                            <!--begin::Input group-->
+                            <div class="row mb-8">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Publishable Key</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="stripe_test_mode_publishable_key" value="<%= paymentMethodDetails && paymentMethodDetails.stripe_test_mode_publishable_key ? paymentMethodDetails.stripe_test_mode_publishable_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Secret Key</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="stripe_test_mode_secret_key" value="<%= paymentMethodDetails && paymentMethodDetails.stripe_test_mode_secret_key ? paymentMethodDetails.stripe_test_mode_secret_key : ''  %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                          </div>
+
+                          <div id="live_mode_inputs">
+
+                            <!--begin::Input group-->
+                            <div class="row mb-8">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Publishable Key</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="stripe_live_mode_publishable_key" value="<%=  paymentMethodDetails && paymentMethodDetails.stripe_live_mode_publishable_key ? paymentMethodDetails.stripe_live_mode_publishable_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Secret Key</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="stripe_live_mode_secret_key" value="<%=  paymentMethodDetails && paymentMethodDetails.stripe_live_mode_secret_key ? paymentMethodDetails.stripe_live_mode_secret_key : '' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                          </div>
+
+                        </div>
+                        <!--end::Card body-->
+
+                        <!--begin::Actions-->
+                        <div class="card-footer d-flex justify-content-start px-9">
+                          <button type="submit" class="btn btn-primary me-5">Save</button>
+                        </div>
+                        <!--end::Actions-->
+
+                      </form>
+                      <!--end::Form-->
+
+                    </div>
+                    <!--end::Content-->
+
+                  </div>
+                  <!--end::card-->
+
+                </div>
+                <!--end::Col-->
+
+                <!--begin::Col-->
+                <div class="col-xxl-6 mb-5 mb-xl-10">
+
+                  <!--begin::card-->
+                  <div class="card card-flush h-xl-100">
+
+                    <!--begin::Card header-->
+                    <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
+
+                      <!--begin::Card title-->
+                      <div class="card-title m-0">
+                        <h3 class="fw-bolder m-0 fs-1">Razorpay</h3>
+                      </div>
+                      <!--end::Card title-->
+
+                    </div>
+                    <!--begin::Card header-->
+
+                    <!--begin::Content-->
+                    <div id="kt_account_settings_profile_details" class="collapse show">
+
+                      <!--begin::Form-->
+                      <form class="form" method="post" action="<%= process.env.BASE_URL %>edit-razorpay-payment-method" id="payment_gateway_razorpay_form">
+
+                        <!--begin::Card body-->
+                        <div class="card-body border-top">
+
+                          <!--begin::Input group-->
+                          <input type="hidden" name="id" value="<%= paymentMethodDetails && paymentMethodDetails._id ? paymentMethodDetails._id : '' %>">
+                          <!--end::Input group-->
+
+                          <!--begin::Input group-->
+                          <div class="row mb-5">
+                            <label class="col-lg-3 required col-form-label fw-semibold fs-6">Enable/Disable</label>
+                            <div class="col-lg-9 fv-row">
+                              <label class="form-check form-switch form-check-custom">
+                                <input class="form-check-input" type="checkbox" name="razorpay_is_enable" value="1" <%= paymentMethodDetails && paymentMethodDetails.razorpay_is_enable == 1 ? 'checked' : '' %> />
+
+                              </label>
+                            </div>
+                          </div>
+                          <!--end::Input group-->
+
+                          <!--begin::Input group-->
+                          <div class="row mb-8">
+                            <label class="col-lg-3 required col-form-label fw-semibold fs-6">Mode</label>
+                            <div class="col-lg-9 fv-row d-flex">
+                              <label class="form-check form-check-custom  pe-20">
+                                <input id="razorpay_testModeRadio" class="form-check-input" type="radio" name="razorpay_mode" value="testMode" <%=  !paymentMethodDetails || paymentMethodDetails.razorpay_mode === 'testMode' || paymentMethodDetails.razorpay_mode !== 'liveMode' ? 'checked' : '' %> />
+                                <span class="form-check-label fw-semibold fs-5">Test Mode</span>
+                              </label>
+                              <label class="form-check form-check-custom">
+                                <input id="razorpay_liveModeRadio" class="form-check-input" type="radio" name="razorpay_mode" value="liveMode" <%=  paymentMethodDetails && paymentMethodDetails.razorpay_mode === 'liveMode' ? 'checked' : '' %> />
+                                <span class="form-check-label fw-semibold fs-5">Live Mode</span>
+                              </label>
+                            </div>
+                          </div>
+                          <!--end::Input group-->
+
+                          <div id="razorpay_test_mode_inputs">
+
+                            <!--begin::Input group-->
+                            <div class="row mb-8">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Key ID</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="razorpay_test_mode_key_id" value="<%= paymentMethodDetails &&  paymentMethodDetails.razorpay_test_mode_key_id ? paymentMethodDetails.razorpay_test_mode_key_id :'' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Key Secret</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="razorpay_test_mode_key_secret" value="<%= paymentMethodDetails && paymentMethodDetails.razorpay_test_mode_key_secret ? paymentMethodDetails.razorpay_test_mode_key_secret :'' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                          </div>
+
+                          <div id="razorpay_live_mode_inputs">
+
+                            <!--begin::Input group-->
+                            <div class="row mb-8">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Key ID</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="clientIdInput" class="form-control form-control-lg" name="razorpay_live_mode_key_id" value="<%= paymentMethodDetails && paymentMethodDetails.razorpay_live_mode_key_id ? paymentMethodDetails.razorpay_live_mode_key_id :'' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                            <!--begin::Input group-->
+                            <div class="row">
+                              <label class="col-lg-3 required col-form-label fw-semibold fs-6">Key Secret</label>
+                              <div class="col-lg-9 fv-row">
+                                <input type="text" id="secretKeyInput" class="form-control form-control-lg" name="razorpay_live_mode_key_secret" value="<%= paymentMethodDetails && paymentMethodDetails.razorpay_live_mode_key_secret ? paymentMethodDetails.razorpay_live_mode_key_secret :'' %>" required />
+                              </div>
+                            </div>
+                            <!--end::Input group-->
+
+                          </div>
+
+                        </div>
+                        <!--end::Card body-->
+
+                        <!--begin::Actions-->
+                        <div class="card-footer">
+                          <button type="submit" class="btn btn-primary me-5">Save</button>
+                        </div>
+                        <!--end::Actions-->
+
+                      </form>
+                      <!--end::Form-->
+
+                    </div>
+                    <!--end::Content-->
+
+                  </div>
+                  <!--end::Col-->
+
+                </div>
+                <!-- end::col -->
+
+              </div>
+              <!-- end:: row -->
+
+            </div>
+            <!--end::Content container-->
+
+          </div>
+          <!--end::Content-->
+
+        </div>
+        <!--end::Content wrapper-->
+
+        <!--begin::Footer-->
+        <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+          <!--begin::Copyright-->
+          <div class="text-dark order-2 order-md-1">
+            <span class="text-muted fw-semibold me-1"></span>
+            <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
+          </div>
+          <!--end::Copyright-->
+        </div>
+        <!--end::Footer-->
+
+      </div>
+      <!--end:::Main-->
+
+    </div>
+    <!--end::Wrapper-->
+
+  </div>
+  <!--end::Page-->
+
+</div>
+<!--end::App-->
+
+<!--begin::Scrolltop-->
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+  <i class="ki-duotone ki-arrow-up">
+    <span class="path1"></span>
+    <span class="path2"></span>
+  </i>
+</div>
+<!--end::Scrolltop-->
+
+
+<!-- partial:partials/header -->
+<%- include('../layouts/footer.ejs') %>

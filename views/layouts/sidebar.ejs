@@ -1,0 +1,451 @@
+<div class="d-flex flex-column justify-content-between h-100 hover-scroll-overlay-y my-2 d-flex flex-column" id="kt_app_sidebar_main" data-kt-scroll="true" data-kt-scroll-activate="true" data-kt-scroll-height="auto" data-kt-scroll-dependencies="#kt_app_header" data-kt-scroll-wrappers="#kt_app_main" data-kt-scroll-offset="5px">
+  <!--begin::Sidebar menu-->
+  <div id="#kt_app_sidebar_menu" data-kt-menu="true" data-kt-menu-expand="false" class="flex-column-fluid menu menu-sub-indention menu-column menu-rounded menu-active-bg mb-7">
+
+    <!--begin:Menu item-->
+    <div class="menu-item">
+      <!--begin:Menu link-->
+      <a class="menu-link" href="<%= process.env.BASE_URL %>dashboard" title="Dashboard" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+        <span class="menu-icon">
+          <i class="fa-solid fa-house fs-3"></i>
+        </span>
+        <span class="menu-title">Dashboards</span>
+      </a>
+      <!--end:Menu link-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="ki-solid ki-notepad-edit fs-1"></i>
+        </span>
+        <span class="menu-title">Intro</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>add-intro" title="Add Intro" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Add Intro</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>intro" title="View All Intro" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View All Intro</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon"><i class="ki-solid ki-note-2 fs-2x"></i></span>
+        <span class="menu-title">Category</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>add-category" title="Add Category" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Add Catgory</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>category" title="View All Category" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View All Category</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="ki-solid ki-lovely fs-2x"></i>
+        </span>
+        <span class="menu-title">Campaign</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>add-campaign" title="Add Campaign" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Add Campaign</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>campaign" title="View All Campaign" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View All Campaign</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+         <!--begin:Menu item-->
+         <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>user-campaign" title="View All Campaign" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View  User Campaign</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+  <!--begin:Menu item-->
+  <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+    <!--begin:Menu link-->
+    <span class="menu-link">
+      <span class="menu-icon"><i class="ki-solid ki-picture fs-1"></i></span>
+      <span class="menu-title">Banner</span>
+      <span class="menu-arrow"></span>
+    </span>
+    <!--end:Menu link-->
+    <!--begin:Menu sub-->
+    <div class="menu-sub menu-sub-accordion">
+      <!--begin:Menu item-->
+      <div class="menu-item">
+        <!--begin:Menu link-->
+        <a class="menu-link" href="<%= process.env.BASE_URL %>banner" title="View All Banner" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+          <span class="menu-bullet">
+            <span class="bullet bullet-dot"></span>
+          </span>
+          <span class="menu-title">View All Banner</span>
+        </a>
+        <!--end:Menu link-->
+      </div>
+      <!--end:Menu item-->
+    </div>
+    <!--end:Menu sub-->
+  </div>
+  <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="ki-solid ki-profile-user fs-1"></i>
+        </span>
+        <span class="menu-title">Donor</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>donor" title="View All Donor" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View All Donor</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="ki-solid ki-user-square fs-1"></i>
+        </span>
+        <span class="menu-title">User</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>user" title="View All User" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View All User</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="ki-solid ki-notification-on fs-2x"></i>
+        </span>
+        <span class="menu-title">Notification</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>push-notification" title="Push Notification" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Push Notification</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>notification" title="View All Notification" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View All Notification</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="fa-solid fa-coins fs-2"></i>
+        </span>
+        <span class="menu-title">Payment Gateway</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>payment-gateway" title="View Payment Gateway" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">View All Gateway</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="ki-solid ki-some-files fs-1"></i>
+        </span>
+        <span class="menu-title">Pages</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>private-policy" title="Private Policy" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Private Policy</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+    
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>terms-and-condition" title="Terms And Condition" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Terms And Condition</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>about-us" title="About Us" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">About Us</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+    
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+    <!--begin:Menu item-->
+    <div data-kt-menu-trigger="click" class="menu-item menu-accordion">
+      <!--begin:Menu link-->
+      <span class="menu-link">
+        <span class="menu-icon">
+          <i class="ki-solid ki-setting-2 fs-1"></i>
+        </span>
+        <span class="menu-title">Setting</span>
+        <span class="menu-arrow"></span>
+      </span>
+      <!--end:Menu link-->
+      <!--begin:Menu sub-->
+      <div class="menu-sub menu-sub-accordion">
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>currency" title="Set Currency & Timezone" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Set Currency & Timezone</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+        <!--begin:Menu item-->
+        <div class="menu-item">
+          <!--begin:Menu link-->
+          <a class="menu-link" href="<%= process.env.BASE_URL %>mail-config" title="Mail Config" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+            <span class="menu-bullet">
+              <span class="bullet bullet-dot"></span>
+            </span>
+            <span class="menu-title">Mail Config</span>
+          </a>
+          <!--end:Menu link-->
+        </div>
+        <!--end:Menu item-->
+
+      </div>
+      <!--end:Menu sub-->
+    </div>
+    <!--end:Menu item-->
+
+     <!--begin:Menu item-->
+     <div class="menu-item">
+      <!--begin:Menu link-->
+      <a class="menu-link" href="<%= process.env.BASE_URL %>verification" title="Verification" data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="right">
+        <span class="menu-icon">
+          <i class="fa-solid fa-key fs-3"></i>
+        </span>
+        <span class="menu-title">Verification</span>
+      </a>
+      <!--end:Menu link-->
+    </div>
+    <!--end:Menu item-->
+
+  </div>
+  <!--end::Sidebar menu-->
+</div>

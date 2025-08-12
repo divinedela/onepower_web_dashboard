@@ -1,0 +1,613 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+  <!--begin::Page-->
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <!--begin::navbar-->
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <!--begin::navbar main-->
+      <%- include('../layouts/navbar.ejs') %>
+      <!--end::navbar main-->
+      <!--begin::Separator-->
+      <div class="app-header-separator"></div>
+      <!--end::Separator-->
+    </div>
+    <!--end::navbar-->
+
+    <!--begin::Wrapper-->
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <!--begin::Sidebar-->
+      <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <!--begin::Main-->
+        <%- include('../layouts/sidebar.ejs') %>
+        <!--end::Main-->
+      </div>
+      <!--end::Sidebar-->
+
+      <!--begin::Main-->
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <!--begin::Content wrapper-->
+        <div class="d-flex flex-column flex-column-fluid">
+          <!--begin::Toolbar-->
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <!--begin::Toolbar container-->
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <!--begin::Toolbar wrapper-->
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <!--begin::Page title-->
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <!--begin::Breadcrumb-->
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a  class="text-gray-500">
+                        <i class="fa-solid fa-house fs-3 text-gray-400 me-n1"></i>
+                      </a>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Dashboards</li>
+                    <!--end::Item-->
+                  </ul>
+                  <!--end::Breadcrumb-->
+                </div>
+                <!--end::Page title-->
+              </div>
+              <!--end::Toolbar wrapper-->
+            </div>
+            <!--end::Toolbar container-->
+          </div>
+          <!--end::Toolbar-->
+
+          <!--begin::Content-->
+          <div id="kt_app_content" class="app-content flex-column-fluid pt-0">
+            <!--begin::Content container-->
+            <div id="kt_app_content_container" class="app-container container-fluid">
+
+               <!-- Begin ::row -->
+               <div class="row gy-5 g-xl-10 mb-10">
+
+                <!--begin::Col-->
+                <div class="col-xl-6">
+                  <!--begin::Lists Widget 19-->
+                  <div class="card card-flush overflow-hidden h-md-100">
+                    <!--begin::Heading-->
+                    <div class="card-header rounded bgi-no-repeat bgi-size-cover bgi-position-y-top bgi-position-x-center align-items-start h-225px" style="background-color:  #f2680c;" data-bs-theme="light">
+                      <!--begin::Title-->
+                       <!--begin::Title-->
+                       <h3 class="card-title align-items-start flex-column text-white pt-5">
+                        <span class="fw-bold fs-3x mb-3">Dashboard</span>
+                        <span class="text-gray-200 fs-5">Manage campaigns, track donations, and make a positive impact through your platform</span>
+                      </h3>
+                      <!--end::Title-->
+  
+                    </div>
+                    <!--end::Heading-->
+  
+                    <!--begin::Body-->
+                    <div class="card-body mt-n20">
+                      <!--begin::Stats-->
+                      <div class="mt-n20 position-relative">
+  
+                        <!--begin::Row-->
+                        <div class="row g-3 g-lg-6">
+                             <!--begin::Col-->
+                             <div class="col-4">
+                              <a href="<%= process.env.BASE_URL %>category">
+                                <!--begin::Items-->
+                                <div class="bg-gray-100 bg-opacity-70 rounded-2 px-6 py-5">
+                                  <!--begin::Symbol-->
+                                  <div class="symbol symbol-30px me-5 mb-8 ">
+                                    <span class="symbol-label bg-gray-100">
+                                      <i class="ki-solid ki-note-2 fs-2x text-orange"></i>
+                                    </span>
+                                  </div>
+                                  <!--end::Symbol-->
+    
+                                  <!--begin::Stats-->
+                                  <div class="m-0">
+                                    <!--begin::Number-->
+                                    <span class="text-orange fw-bolder d-block fs-2qx lh-1 ls-n1 mb-1"><%= totalCategory %></span>
+                                    <!--end::Number-->
+    
+                                    <!--begin::Desc-->
+                                    <span class="text-orange fw-semibold fs-6">Category</span>
+                                    <!--end::Desc-->
+                                  </div>
+                                  <!--end::Stats-->
+                                </div>
+                                <!--end::Items-->
+                              </a>
+                            </div>
+                            <!--end::Col-->
+                          <!--begin::Col-->
+                          <div class="col-4">
+                            <a href="<%= process.env.BASE_URL %>campaign">
+                              <!--begin::Items-->
+                              <div class="bg-gray-100 bg-opacity-70 rounded-2 px-6 py-5">
+                                <!--begin::Symbol-->
+                                <div class="symbol symbol-30px me-5 mb-8">
+                                  <span class="symbol-label bg-gray-100">
+                                    <i class="ki-solid ki-lovely fs-2x text-orange"> </i>
+                                  </span>
+                                </div>
+                                <!--end::Symbol-->
+  
+                                <!--begin::Stats-->
+                                <div class="m-0">
+                                  <!--begin::Number-->
+                                  <span class="text-orange fw-bolder d-block fs-2qx lh-1 ls-n1 mb-1"><%= totalUpcomingCampaign %></span>
+                                  <!--end::Number-->
+  
+                                  <!--begin::Desc-->
+                                  <span class="text-orange fw-semibold fs-6">Upcoming Campaign</span>
+                                  <!--end::Desc-->
+                                </div>
+                                <!--end::Stats-->
+                              </div>
+                              <!--end::Items-->
+                            </a>
+                          </div>
+                          <!--end::Col-->
+                                
+                          <!--begin::Col-->
+                          <div class="col-4">
+                            <a href="<%= process.env.BASE_URL %>campaign">
+                              <!--begin::Items-->
+                              <div class="bg-gray-100 bg-opacity-70 rounded-2 px-6 py-5">
+                                   <!--begin::Symbol-->
+                                   <div class="symbol symbol-30px me-5 mb-8">
+                                    <span class="symbol-label bg-gray-100">
+                                      <i class="ki-solid ki-lovely fs-2x text-orange"> </i>
+                                    </span>
+                                  </div>
+                                  <!--end::Symbol-->
+  
+                                <!--begin::Stats-->
+                                <div class="m-0">
+                                  <!--begin::Number-->
+                                  <span class="text-orange fw-bolder d-block fs-2qx lh-1 ls-n1 mb-1"><%= totalRunningCampaign %></span>
+                                  <!--end::Number-->
+  
+                                  <!--begin::Desc-->
+                                  <span class="text-orange fw-semibold fs-6">Running Campaign</span>
+                                  <!--end::Desc-->
+                                </div>
+                                <!--end::Stats-->
+                              </div>
+                              <!--end::Items-->
+                            </a>
+                          </div>
+                          <!--end::Col-->
+
+                           <!--begin::Col-->
+                           <div class="col-4">
+                            <a href="<%= process.env.BASE_URL %>campaign">
+                              <!--begin::Items-->
+                              <div class="bg-gray-100 bg-opacity-70 rounded-2 px-6 py-5">
+                                  <!--begin::Symbol-->
+                                  <div class="symbol symbol-30px me-5 mb-8">
+                                    <span class="symbol-label bg-gray-100">
+                                      <i class="ki-solid ki-lovely fs-2x text-orange"> </i>
+                                    </span>
+                                  </div>
+                                  <!--end::Symbol-->
+  
+                                <!--begin::Stats-->
+                                <div class="m-0">
+                                  <!--begin::Number-->
+                                  <span class="text-orange fw-bolder d-block fs-2qx lh-1 ls-n1 mb-1"><%= totalEndedCampaign %></span>
+                                  <!--end::Number-->
+  
+                                  <!--begin::Desc-->
+                                  <span class="text-orange fw-semibold fs-6">Ended Campaign</span>
+                                  <!--end::Desc-->
+                                </div>
+                                <!--end::Stats-->
+                              </div>
+                              <!--end::Items-->
+                            </a>
+                          </div>
+                          <!--end::Col-->
+                                                    
+                          <!--begin::Col-->
+                          <div class="col-4">
+                            <a href="<%= process.env.BASE_URL %>user-campaign">
+                              <!--begin::Items-->
+                              <div class="bg-gray-100 bg-opacity-70 rounded-2 px-6 py-5">
+                                  <!--begin::Symbol-->
+                                  <div class="symbol symbol-30px me-5 mb-8 ">
+                                    <span class="symbol-label bg-gray-100">
+                                      <i class="ki-solid ki-lovely fs-2x text-orange"></i>
+                                    </span>
+                                  </div>
+                                  <!--end::Symbol-->
+  
+                                <!--begin::Stats-->
+                                <div class="m-0">
+                                  <!--begin::Number-->
+                                  <span class="text-orange fw-bolder d-block fs-2qx lh-1 ls-n1 mb-1"><%= totalUserCampaign %></span>
+                                  <!--end::Number-->
+  
+                                  <!--begin::Desc-->
+                                  <span class="text-orange fw-semibold fs-6">User Campaign</span>
+                                  <!--end::Desc-->
+                                </div>
+                                <!--end::Stats-->
+                              </div>
+                              <!--end::Items-->
+                            </a>
+                          </div>
+                          <!--end::Col-->
+                          <!--begin::Col-->
+                          <div class="col-4">
+                            <a href="<%= process.env.BASE_URL %>user">
+                              <!--begin::Items-->
+                              <div class="bg-gray-100 bg-opacity-70 rounded-2 px-6 py-5">
+                                <!--begin::Symbol-->
+                                <div class="symbol symbol-30px me-5 mb-8">
+                                  <span class="symbol-label bg-gray-100">
+                                    <i class="ki-solid ki-user-square fs-2x text-orange"></i>
+                                  </span>
+                                </div>
+                                <!--end::Symbol-->
+  
+                                <!--begin::Stats-->
+                                <div class="m-0">
+                                  <!--begin::Number-->
+                                  <span class="text-orange fw-bolder d-block fs-2qx lh-1 ls-n1 mb-1"><%= totalUser %></span>
+                                  <!--end::Number-->
+  
+                                  <!--begin::Desc-->
+                                  <span class="text-orange fw-semibold fs-6">User</span>
+                                  <!--end::Desc-->
+                                </div>
+                                <!--end::Stats-->
+                              </div>
+                              <!--end::Items-->
+                            </a>
+                          </div>
+                          <!--end::Col-->
+  
+                        </div>
+                        <!--end::Row-->
+  
+                      </div>
+                      <!--end::Stats-->
+                    </div>
+                    <!--end::Body-->
+                  </div>
+                  <!--end::Lists Widget 19-->
+  
+                </div>
+                <!--end::Col-->
+  
+                <!-- begin::Col -->
+                <div class="col-xl-6">
+                  <!-- begin::Card -->
+                  <div class="card card-flush h-xl-100">
+                    <!--begin::Card header-->
+                    <div class="card-header pt-7">
+                        <!--begin::Title-->
+                        <h3 class="card-title align-items-start flex-column">
+                            <span class="card-label fw-bold text-gray-900 fs-2">Donation Report</span>
+                            <span class="text-gray-500 mt-1 fw-semibold fs-6">A total of <%= totalEndedCampaign %> campaigns completed with support from <%= totalDonor %> donors</span>
+                        </h3>
+                        <!--end::Title-->
+                
+                        <!--begin::Actions-->
+                        <div class="card-toolbar">
+                            <!--begin::Filters-->
+                            <div class="d-flex flex-stack flex-wrap gap-4">
+                                <!--begin::Search-->
+                                <a href="<%= process.env.BASE_URL %>campaign" class="btn btn-light-orange btn-sm text-orange">View Campaign</a>
+                                <!--end::Search-->
+                            </div>
+                            <!--begin::Filters-->
+                        </div>
+                        <!--end::Actions-->
+                    </div>
+                    <!--end::Card header-->
+                
+                    <!--begin::Card body-->
+                    <div class="card-body">
+                        <!--begin::Table-->
+                        <div class="dt-container dt-bootstrap5 dt-empty-footer">
+                          <div class="table-responsive">
+                            <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable"  style="width: 100%;">
+                            <!--begin::Table head-->
+                            <thead>
+                                <!--begin::Table row-->
+                                <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                                  <th class="min-w-50px">no</th>
+                                  <th class="min-w-150px">name</th>
+                                  <th class="min-w-100px">amount</th>
+                                  <th class="min-w-100px">donation </th>
+                                  <th class="min-w-100px">remaining</th>
+                                  <th class="min-w-100px">remaining time</th>
+                                </tr>
+                                <!--end::Table row-->
+                            </thead>
+                            <!--end::Table head-->
+                
+                            <!--begin::Table body-->
+                            <tbody class="fw-bold text-gray-600">
+                              <% if (campaign.length > 0) { %>
+                                <% for (let i = 0; i < campaign.length; i++) { %>
+                                <!-- begin:: tr -->
+                                <tr>
+                                  <td><%= i+1 %></td>
+                                  <td class="pe-0 fw-bolder text-dark"><%= campaign[i].name %></td>
+                                  <td class="pe-0 fw-bolder text-primary"><%= campaign[i].campaign_amount %> </td>
+                                  <td class="pe-0 fw-bolder text-success"><%= campaign[i].totalDonationAmount %> </td>
+                                  <td class="pe-0 fw-bolder text-warning"><%= campaign[i].remainingAmount %> </td>
+                                  <td class="pe-0 fw-bolder text-danger"><%= campaign[i].remainingTime %> </td>
+                                </tr>
+                                <!-- end:: tr -->
+                                <% } %>
+                              <% } else { %>
+                                <tr>
+                                  <td colspan="7" class="text-center">No Campaign found</td>
+                                </tr>
+                              <% } %>
+                            </tbody>
+                                            
+                          
+                            </table>
+                         <!--end::Table-->    
+                        </div>
+                        <!-- end::Table -->
+                        </div>
+                    </div>
+                    <!--end::Card body-->
+                  </div>
+                 <!-- end::Card -->
+                </div>
+                <!-- end::Col -->
+
+              </div>
+              <!-- end::row -->
+
+              <!-- begin::row -->
+              <div class="row gy-5 g-xl-10">
+                  <div class="col-xl-9">
+                        <!-- begin::Card -->
+                  <div class="card card-flush h-xl-100">
+                    <!--begin::Card header-->
+                    <div class="card-header pt-7">
+                        <!--begin::Title-->
+                        <h3 class="card-title align-items-start flex-column">
+                            <span class="card-label fw-bold text-gray-900 fs-3">Latest added User Campaign</span>
+                            <span class="text-gray-500 mt-1 fw-semibold fs-6">A total of <%= totalUserCampaign %> user campaigns added recently</span>
+                        </h3>
+                        <!--end::Title-->
+                
+                        <!--begin::Actions-->
+                        <div class="card-toolbar">
+                            <!--begin::Filters-->
+                            <div class="d-flex flex-stack flex-wrap gap-4">
+                                <!--begin::Search-->
+                                <a href="<%= process.env.BASE_URL %>user-campaign" class="btn btn-light-orange btn-sm text-orange">View Campaign</a>
+                                <!--end::Search-->
+                            </div>
+                            <!--begin::Filters-->
+                        </div>
+                        <!--end::Actions-->
+                    </div>
+                    <!--end::Card header-->
+                
+                    <!--begin::Card body-->
+                    <div class="card-body">
+                        <!--begin::Table-->
+                        <div class="dt-container dt-bootstrap5 dt-empty-footer">
+                          <div class="table-responsive">
+                            <table class="table align-middle table-row-dashed fs-6 gy-5 dataTable"  style="width: 100%;">
+                            <!--begin::Table head-->
+                            <thead>
+                                <!--begin::Table row-->
+                                <tr class="text-start text-gray-500 fw-bolder fs-7 text-uppercase gs-0">
+                                  <th class="min-w-50px">no</th>
+                                    <th class="min-w-150px">name</th>
+                                    <th class="min-w-100px">category</th>
+                                    <th class="min-w-100px">start date</th>
+                                    <th class="min-w-100px">end date</th>
+                                  <th class="min-w-80px">amount</th>
+                                  <th class="min-w-70px">status</th>
+                                 
+                                </tr>
+                                <!--end::Table row-->
+                            </thead>
+                            <!--end::Table head-->
+                
+                            <!--begin::Table body-->
+                            <tbody class="fw-bold text-gray-600">
+                              <% if (userCampaign.length > 0) { %>
+                                <% for (let i = 0; i < userCampaign.length; i++) { %>
+                                <!-- begin:: tr -->
+                                <tr>
+                                  <td><%= i+1 %></td>
+                                  <td class="pe-0 fw-bold text-dark"><%= userCampaign[i].name %></td>
+                                  <td class="pe-0 fw-bold text-dark"><%= userCampaign[i].categoryId ? userCampaign[i].categoryId.name : "N/A" %> </td>
+                                    <td class="pe-0 fw-bold text-dark">
+                                      <%= new Date(userCampaign[i].starting_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>  
+                                     </td>
+                                  <td class="pe-0 fw-bold text-dark">
+                                      <%= new Date(userCampaign[i].ending_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>  
+                                     </td>
+                                  <td class="pe-0 fw-bolder text-primary"><%= userCampaign[i].campaign_amount %> </td>
+                                  <td class="pe-0 fw-bolder">
+                                    <span class="badge badge-<%= userCampaign[i].isApproved ? "success" : "danger" %>">
+                                      <%= userCampaign[i].isApproved ? "Approved" : "Not Approved"  %> 
+                                    </span>
+                                  </td>
+                                </tr>
+                                <!-- end:: tr -->
+                                <% } %>
+                              <% } else { %>
+                                <tr>
+                                  <td colspan="7" class="text-center">No User Campaign found</td>
+                                </tr>
+                              <% } %>
+                            </tbody>
+                                            
+                          
+                            </table>
+                         <!--end::Table-->    
+                        </div>
+                        <!-- end::Table -->
+                        </div>
+                    </div>
+                    <!--end::Card body-->
+                  </div>
+                 <!-- end::Card -->
+                  </div>
+                    <!--begin::Col-->
+                <div class="col-xl-3">
+
+                  <!--begin::List widget 5-->
+                  <div class="card card-flush h-xl-100">
+                    <!--begin::Header-->
+                    <div class="card-header pt-7">
+                      <!--begin::Title-->
+                      <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label fw-bold text-gray-900">Latest Registered Users</span>
+                        <span class="text-gray-500 mt-1 fw-semibold fs-6"><%= userCount %> total users, <%= userActiveCount %> currently Active</span>
+                      </h3>
+                      <!--end::Title-->
+
+                    </div>
+                    <!--end::Header-->
+
+                    <!--begin::Body-->
+                    <div class="card-body">
+                      <!--begin::Scroll-->
+                      <div class="hover-scroll-overlay-y pe-6 me-n6" style="height: 415px">
+                        <!--begin::Item-->
+                        <% if (users.length > 0) { %>
+                        <% for (let i = 0; i < users.length; i++) { %>
+                        <!--begin::Item-->
+                        <div class="border border-dashed border-gray-300 rounded px-7 py-3 mb-6 ">
+                          <!--begin::Info-->
+                          <div class="d-flex flex-stack mb-3">
+                            <!--begin::Wrapper-->
+                            <div class="me-3 d-flex align-items-center ">
+                              <!--begin::Thumbnail-->
+                              <% if (users[i].image) { %>
+                              <a href="<%= IMAGE_URL + users[i].image %>" class="symbol symbol-40px overflow-hidden" data-fslightbox="lightbox-basic">
+                                <img src="<%= IMAGE_URL + users[i].image %>" alt="<%= users[i].image %>" class="symbol-label border border-gray-400">
+                              </a>
+                              <% } else { %>
+                              <div class="symbol symbol-40px overflow-hidden align-items-center">
+                                <a>
+                                  <div class="symbol-label fs-3 fw-bold text-uppercase 
+                                              <%= i % 2 === 0 ? 'bg-warning text-white' : 'bg-success text-white' %>">
+                                    <%= users[i].firstname.charAt(0) %><%= users[i].lastname.charAt(0) %>
+                                  </div>
+                                </a>
+                              </div>
+
+                              <% } %>
+                              <!--end::Thumbnail-->
+
+                              <!--begin::Title-->
+                              <div class="d-flex justify-content-start flex-column ms-3">
+                                <a href="<%= process.env.BASE_URL %>user" class="text-gray-800  text-hover-primary fs-5 fw-bold "> <%= users[i].firstname %>&nbsp;<%= users[i].lastname %></a>
+                                <span class="text-gray-500 fw-semibold d-block fs-7"><%= users[i].country_code %>&nbsp;&nbsp;<%= users[i].phone_number ? users[i].phone_number : "N/A" %> </span>
+                              </div>
+                              <!--end::Title-->
+
+                            </div>
+                            <!--end::Wrapper-->
+
+                            <div class="m-0">
+                              <!--begin::Name-->
+                              <span class="text-gray-500 fw-bold">
+                                <% if (users[i].isVerified === true) { %>
+                                <div class="badge badge-light-primary ms-1">Verified</div>
+                                <% } else { %>
+                                <div class="badge badge-light-danger ms-1">Unverified</div>
+                                <% } %>
+                              </span>
+                              <!--end::Name-->
+                            </div>
+                          </div>
+                          <!--end::Info-->
+
+                          <!--begin::Customer-->
+                          <div class="d-flex flex-stack">
+                            <!--begin::Name-->
+                            <span class="text-gray-500 fw-bold">Email:
+                              <a class="text-gray-800 text-hover-primary fw-bold"><%= users[i].email %> </a>
+                            </span>
+                            <!--end::Name-->
+
+
+                          </div>
+                          <!--end::Customer-->
+                        </div>
+                        <!--end::Item-->
+                        <% } %>
+                        <% } else { %>
+                          <span class="pt-15 text-gray-600 fs-6 fw-bold text-muted">No new user registrations</span>
+                        <% } %>
+                        <!--end::Item-->
+                      </div>
+                      <!--end::Scroll-->
+                    </div>
+                    <!--end::Body-->
+                  </div>
+                  <!--end::List widget 5-->
+                </div>
+                <!--end::Col-->
+              </div>
+              <!-- end::row -->
+
+            </div>
+            <!--end::Content container-->
+          </div>
+          <!--end::Content-->
+        </div>
+        <!--end::Content wrapper-->
+
+        <!--begin::Footer-->
+        <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+          <!--begin::Copyright-->
+          <div class="text-dark order-2 order-md-1">
+            <span class="text-muted fw-semibold me-1"></span>
+            <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
+          </div>
+          <!--end::Copyright-->
+        </div>
+        <!--end::Footer-->
+      </div>
+      <!--end:::Main-->
+
+
+    </div>
+    <!--end::Wrapper-->
+
+  </div>
+  <!--end::Page-->
+</div>
+<!--end::App-->
+
+
+<!--begin::Scrolltop-->
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+  <i class="ki-duotone ki-arrow-up">
+    <span class="path1"></span>
+    <span class="path2"></span>
+  </i>
+</div>
+<!--end::Scrolltop-->
+
+<!-- partial:partials/header -->
+<%- include('../layouts/footer.ejs') %>

@@ -1,0 +1,197 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+  <!--begin::Page-->
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <!--begin::navbar-->
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <!--begin::navbar main-->
+      <%- include('../layouts/navbar.ejs') %>
+      <!--end::navbar main-->
+      <!--begin::Separator-->
+      <div class="app-header-separator"></div>
+      <!--end::Separator-->
+    </div>
+    <!--end::navbar-->
+
+    <!--begin::Wrapper-->
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <!--begin::Sidebar-->
+      <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <!--begin::Main-->
+        <%- include('../layouts/sidebar.ejs') %>
+        <!--end::Main-->
+      </div>
+      <!--end::Sidebar-->
+
+      <!--begin::Main-->
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <!--begin::Content wrapper-->
+        <div class="d-flex flex-column flex-column-fluid">
+          <!--begin::Toolbar-->
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <!--begin::Toolbar container-->
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <!--begin::Toolbar wrapper-->
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <!--begin::Page title-->
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <!--begin::Breadcrumb-->
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a class="text-gray-500">
+                        <i class="ki-solid ki-profile-user fs-2 text-gray-400 me-n1"></i>
+                      </a>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Donor</li>
+                    <!--end::Item-->
+                     <!--begin::Item-->
+                     <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">View All Donor</li>
+                    <!--end::Item-->
+                  </ul>
+                  <!--end::Breadcrumb-->
+                  <!--begin::Title-->
+                  <h1 class="page-heading d-flex flex-column justify-content-start text-dark fw-bolder fs-1 lh-0 mt-1">Donor List</h1>
+                  <!--end::Title-->
+                </div>
+                <!--end::Page title-->
+              </div>
+              <!--end::Toolbar wrapper-->
+            </div>
+            <!--end::Toolbar container-->
+          </div>
+          <!--end::Toolbar-->
+
+          <!--begin::Content-->
+          <div id="kt_app_content" class="app-content flex-column-fluid">
+            <!--begin::Content container-->
+            <div id="kt_app_content_container" class="app-container container-fluid">
+                  <!--begin: donor-->
+                  <div class="card card-flush">
+                    <!--begin::Card header-->
+                    <div class="card-header border-0 pt-6">
+                      <!--begin::Card title-->
+                      <div class="card-title mb-5">
+                        <!--begin::Search-->
+                        <div class="d-flex align-items-center position-relative my-1">
+                          <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-4">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                          </i>
+                          <input type="text" data-kt-customer-table-filter="search" class="form-control w-250px ps-12" placeholder="Search Donor" />
+                        </div>
+                        <!--end::Search-->
+                      </div>
+                      <!--begin::Card title-->
+                    </div>
+                    <!--end::Card header-->
+                    <!--begin::Card body-->
+                    <div class="card-body pt-0 ">
+                      <!--begin::Table-->
+                      <div class="table-responsive">
+                        <table id="kt_customers_table" class="table align-middle table-row-dashed fs-6 gy-5">
+                          <thead>
+                            <tr class="text-start text-gray-400 fw-bold fs-5 text-uppercase gs-0">
+                              <th class="min-w-70px">no</th>
+                              <th class="min-w-100px">Date</th>
+                              <th class="min-w-100px">name</th>
+                              <th class="min-w-100px">contact</th>
+                              <th class="min-w-100px">Campaign</th>
+                              <th class="min-w-100px">Amount</th>
+                              <th class="min-w-100px">Method</th>
+                              <th class="min-w-100px">Transaction ID</th>
+                              <th class="min-w-100px">Pay. Status</th>
+                            </tr>
+                          </thead>
+                          <tbody class="fw-semibold text-gray-600">
+                            <% if (donor.length > 0) { %>
+                            <% for (let i = 0; i < donor.length; i++) { %>
+                            <!-- begin:: tr -->
+                            <tr>
+                              <td><%= i+1 %></td>
+                              <td class="pe-0 fw-bolder text-gray-800">
+                                <%= new Date( donor[i].date).toLocaleDateString('en-US', {  year: 'numeric', month: 'long', day: 'numeric' }) %>
+                              </td>
+                              <td class="fw-bolder text-dark"><%= donor[i].userId ? donor[i].userId.firstname + " " + donor[i].userId.lastname : "N/A" %>  </td>
+                              <td class="pe-0 fw-bold">
+                                <%= donor[i].userId ? donor[i].userId.country_code + " " + donor[i].userId.phone_number : "N/A" %>
+                              </td>
+                              <td class="pe-0 fw-bolder text-dark"><%= donor[i].campaignId.name %> </td>
+                              <td class="pe-0 text-primary fw-bolder"><%= donor[i].amount %></td>
+                              <td class="pe-0 fw-bolder text-dark"><%= donor[i].payment_method %> </td>
+                              <td class="pe-0 fw-bolder"><%= donor[i].transaction_id %> </td>
+                              <td class="pe-0 fw-bolder">
+                                <span class="badge badge-light-<%= donor[i].payment_status === 'Successful' ? 'success' : 'danger' %>">
+                                  <%= donor[i].payment_status %>
+                                </span>
+                              </td> 
+                            </tr>
+                            <!-- end::tr -->
+                            <% } %>
+                            <% } else { %>
+                            <!-- <p class="text-center fs-4">No donor record available.</p> -->
+                            <% } %>
+                          </tbody>
+                        </table>
+                      </div>
+                      <!--end::Table-->
+                    </div>
+                    <!--end::Card body-->
+                  </div>
+                  <!--end: donor-->
+            </div>
+            <!--end::Content container-->
+          </div>
+          <!--end::Content-->
+        </div>
+        <!--end::Content wrapper-->
+
+        <!--begin::Footer-->
+        <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+          <!--begin::Copyright-->
+          <div class="text-dark order-2 order-md-1">
+            <span class="text-muted fw-semibold me-1"></span>
+            <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
+          </div>
+          <!--end::Copyright-->
+        </div>
+        <!--end::Footer-->
+      </div>
+      <!--end:::Main-->
+
+
+    </div>
+    <!--end::Wrapper-->
+
+  </div>
+  <!--end::Page-->
+</div>
+<!--end::App-->
+
+<!--begin::Scrolltop-->
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+  <i class="ki-duotone ki-arrow-up">
+    <span class="path1"></span>
+    <span class="path2"></span>
+  </i>
+</div>
+<!--end::Scrolltop-->
+
+<!-- partial:partials/header -->
+<%- include('../layouts/footer.ejs') %>

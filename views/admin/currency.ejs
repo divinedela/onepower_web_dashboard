@@ -1,0 +1,330 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+  <!--begin::Page-->
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <!--begin::navbar-->
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <!--begin::navbar main-->
+      <%- include('../layouts/navbar.ejs') %>
+      <!--end::navbar main-->
+      <!--begin::Separator-->
+      <div class="app-header-separator"></div>
+      <!--end::Separator-->
+    </div>
+    <!--end::navbar-->
+
+    <!--begin::Wrapper-->
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <!--begin::Sidebar-->
+      <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <!--begin::Main sidebar-->
+        <%- include('../layouts/sidebar.ejs') %>
+        <!--end::Main sidebar-->
+      </div>
+      <!--end::Sidebar-->
+
+      <!--begin::Main-->
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <!--begin::Content wrapper-->
+        <div class="d-flex flex-column flex-column-fluid">
+          <!--begin::Toolbar-->
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <!--begin::Toolbar container-->
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <!--begin::Toolbar wrapper-->
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <!--begin::Page title-->
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <!--begin::Breadcrumb-->
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a href="#" class="text-gray-500">
+                        <i class="ki-solid ki-setting-2 fs-2 text-gray-400 me-n1"></i>
+                      </a>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Setting</li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Set Currency</li>
+                    <!--end::Item-->
+                  </ul>
+                  <!--end::Breadcrumb-->
+                </div>
+                <!--end::Page title-->
+              </div>
+              <!--end::Toolbar wrapper-->
+            </div>
+            <!--end::Toolbar container-->
+          </div>
+          <!--end::Toolbar-->
+
+          <!--begin::Content-->
+          <div id="kt_app_content" class="app-content flex-column-fluid pt-0">
+            <!--begin::Content container-->
+            <div id="kt_app_content_container" class="app-container container-fluid">
+
+              <!--begin::Row-->
+              <div class="row g-5">
+                <div class="card mb-5 mb-xl-10 ">
+                  <!--begin::Card header-->
+                  <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
+                    <!--begin::Card title-->
+                    <div class="card-title m-0">
+                      <h3 class="fw-bold m-0 fs-1">Set Currency & Timezone</h3>
+                    </div>
+                    <!--end::Card title-->
+                  </div>
+                  <!--begin::Card header-->
+                  <!--begin::Content-->
+                  <div id="kt_account_settings_profile_details" class="collapse show">
+
+                    <!--begin::Form-->
+                    <form class="form" method="post" action="<%= process.env.BASE_URL %>add-currency">
+                      <!--begin::Card body-->
+                      <div class="card-body border-top pb-0 ">
+
+                        <!-- flash message -->
+                        <% if(flash.error.length> 0){ %>
+                        <!--begin::Alert-->
+                        <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
+                          <!--begin::Content-->
+                          <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
+                          <!--end::Content-->
+                          <!--begin::Close-->
+                          <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                            <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                          </button>
+                          <!--end::Close-->
+                        </div>
+                        <!--end::Alert-->
+                        <% } %>
+                        <!-- complete flash message -->
+
+                        <!-- flash message -->
+                        <% if(flash.success.length> 0){ %>
+                        <!--begin::Alert-->
+                        <div class="alert alert-dismissible bg-light-success d-flex align-items-center mb-10">
+                          <!--begin::Content-->
+                          <span class="fs-4 text-success fw-bold text-center ps-5"><%= flash.success %></span>
+                          <!--end::Content-->
+                          <!--begin::Close-->
+                          <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                            <i class="ki-duotone ki-cross fs-1 text-success fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                          </button>
+                          <!--end::Close-->
+                        </div>
+                        <!--end::Alert-->
+                        <% } %>
+                        <!-- complete flash message -->
+
+                         <!--begin::Input group-->
+                         <input type="hidden" name="id" value="<%= currencyTimezone && currencyTimezone._id ? currencyTimezone._id :"" %>">
+                         <!--end::Input group-->
+ 
+                         <!--begin::Input group-->
+                         <div class="row mb-8">
+                           <!--begin::Label-->
+                        <label class="col-lg-2 col-form-label required fw-semibold fs-6">Currency</label>
+                        <!--end::Label-->
+                           <div class="col-lg-10 fv-row">
+                             <select class="form-select" name="currency" data-control="select2" data-placeholder="Choose a currencyTimezone" required>
+                               <option value="" disabled selected>Choose...</option>
+                               <option value="USD" <% if (currencyTimezone && currencyTimezone.currency === "USD") { %> selected<% } %>>$ USD - United States Dollar</option>
+                               <option value="EUR" <% if (currencyTimezone && currencyTimezone.currency === "EUR") { %> selected<% } %>>€ EUR - Euro</option>
+                               <option value="GBP" <% if (currencyTimezone && currencyTimezone.currency === "GBP") { %> selected<% } %>>£ GBP - British Pound Sterling</option>
+                               <option value="CNY" <% if (currencyTimezone && currencyTimezone.currency === "CNY") { %> selected<% } %>>¥ CNY - Chinese Yuan</option>
+                               <option value="AUD" <% if (currencyTimezone && currencyTimezone.currency === "AUD") { %> selected<% } %>>$ AUD - Australian Dollar</option>
+                               <option value="INR" <% if (currencyTimezone && currencyTimezone.currency === "INR") { %> selected<% } %>>₹ INR - Indian Rupee</option>
+                               <option value="JPY" <% if (currencyTimezone && currencyTimezone.currency === "JPY") { %> selected<% } %>>¥ JPY - Japanese Yen</option>
+                               <option value="CAD" <% if (currencyTimezone && currencyTimezone.currency === "CAD") { %> selected<% } %>>$ CAD - Canadian Dollar</option>
+                               <option value="CHF" <% if (currencyTimezone && currencyTimezone.currency === "CHF") { %> selected<% } %>>CHF CHF - Swiss Franc</option>
+                               <option value="SEK" <% if (currencyTimezone && currencyTimezone.currency === "SEK") { %> selected<% } %>>kr SEK - Swedish Krona</option>
+                               <option value="NZD" <% if (currencyTimezone && currencyTimezone.currency === "NZD") { %> selected<% } %>>$ NZD - New Zealand Dollar</option>
+                               <option value="SGD" <% if (currencyTimezone && currencyTimezone.currency === "SGD") { %> selected<% } %>>$ SGD - Singapore Dollar</option>
+                             </select>
+                           </div>
+                         </div>
+                         <!--end::Input group-->
+
+                         
+                          <!--begin::Input group-->
+                          <div class="row">
+                            <!--begin::Label-->
+                         <label class="col-lg-2 col-form-label required fw-semibold fs-6">Timezone</label>
+                         <!--end::Label-->
+                            <div class="col-lg-10 fv-row">
+                              <select class="form-select form-select" name="timezone" data-control="select2" data-placeholder="Select Time zone" id="orderStatusSelect" required>
+                                <option></option>
+                                <option value="Etc/GMT+12" <% if (currencyTimezone && currencyTimezone.timezone === "Etc/GMT+12") { %> selected <% } %>>(UTC-12:00) International Date Line West</option>
+                                <option value="Etc/GMT+11" <% if (currencyTimezone && currencyTimezone.timezone === "Etc/GMT+11") { %> selected <% } %>>(UTC-11:00) Coordinated Universal Time-11</option>
+                                <option value="Pacific/Honolulu" <% if (currencyTimezone && currencyTimezone.timezone === "Pacific/Honolulu") { %> selected <% } %>>(UTC-10:00) Hawaii</option>
+                                <option value="America/Anchorage" <% if (currencyTimezone && currencyTimezone.timezone === "America/Anchorage") { %> selected <% } %>>(UTC-09:00) Alaska</option>
+                                <option value="America/Santa_Isabel" <% if (currencyTimezone && currencyTimezone.timezone === "America/Santa_Isabel") { %> selected <% } %>>(UTC-08:00) Baja California</option>
+                                <option value="America/Los_Angeles" <% if (currencyTimezone && currencyTimezone.timezone === "America/Los_Angeles") { %> selected <% } %>>(UTC-08:00) Pacific Time (US and Canada)</option>
+                                <option value="America/Chihuahua" <% if (currencyTimezone && currencyTimezone.timezone === "America/Chihuahua") { %> selected <% } %>>(UTC-07:00) Chihuahua, La Paz, Mazatlan</option>
+                                <option value="America/Phoenix" <% if (currencyTimezone && currencyTimezone.timezone === "America/Phoenix") { %> selected <% } %>>(UTC-07:00) Arizona</option>
+                                <option value="America/Denver" <% if (currencyTimezone && currencyTimezone.timezone === "America/Denver") { %> selected <% } %>>(UTC-07:00) Mountain Time (US and Canada)</option>
+                                <option value="America/Guatemala" <% if (currencyTimezone && currencyTimezone.timezone === "America/Guatemala") { %> selected <% } %>>(UTC-06:00) Central America</option>
+                                <option value="America/Chicago" <% if (currencyTimezone && currencyTimezone.timezone === "America/Chicago") { %> selected <% } %>>(UTC-06:00) Central Time (US and Canada)</option>
+                                <option value="America/Regina" <% if (currencyTimezone && currencyTimezone.timezone === "America/Regina") { %> selected <% } %>>(UTC-06:00) Saskatchewan</option>
+                                <option value="America/Mexico_City" <% if (currencyTimezone && currencyTimezone.timezone === "America/Mexico_City") { %> selected <% } %>>(UTC-06:00) Guadalajara, Mexico City, Monterey</option>
+                                <option value="America/Bogota" <% if (currencyTimezone && currencyTimezone.timezone === "America/Bogota") { %> selected <% } %>>(UTC-05:00) Bogota, Lima, Quito</option>
+                                <option value="America/Indiana/Indianapolis" <% if (currencyTimezone && currencyTimezone.timezone === "America/Indiana/Indianapolis") { %> selected <% } %>>(UTC-05:00) Indiana (East)</option>
+                                <option value="America/New_York" <% if (currencyTimezone && currencyTimezone.timezone === "America/New_York") { %> selected <% } %>>(UTC-05:00) Eastern Time (US and Canada)</option>
+                                <option value="America/Caracas" <% if (currencyTimezone && currencyTimezone.timezone === "America/Caracas") { %> selected <% } %>>(UTC-04:30) Caracas</option>
+                                <option value="America/Halifax" <% if (currencyTimezone && currencyTimezone.timezone === "America/Halifax") { %> selected <% } %>>(UTC-04:00) Atlantic Time (Canada)</option>
+                                <option value="America/Asuncion" <% if (currencyTimezone && currencyTimezone.timezone === "America/Asuncion") { %> selected <% } %>>(UTC-04:00) Asuncion</option>
+                                <option value="America/La_Paz" <% if (currencyTimezone && currencyTimezone.timezone === "America/La_Paz") { %> selected <% } %>>(UTC-04:00) Georgetown, La Paz, Manaus, San Juan</option>
+                                <option value="America/Cuiaba" <% if (currencyTimezone && currencyTimezone.timezone === "America/Cuiaba") { %> selected <% } %>>(UTC-04:00) Cuiaba</option>
+                                <option value="America/Santiago" <% if (currencyTimezone && currencyTimezone.timezone === "America/Santiago") { %> selected <% } %>>(UTC-04:00) Santiago</option>
+                                <option value="America/St_Johns" <% if (currencyTimezone && currencyTimezone.timezone === "America/St_Johns") { %> selected <% } %>>(UTC-03:30) Newfoundland</option>
+                                <option value="America/Sao_Paulo" <% if (currencyTimezone && currencyTimezone.timezone === "America/Sao_Paulo") { %> selected <% } %>>(UTC-03:00) Brasilia</option>
+                                <option value="America/Godthab" <% if (currencyTimezone && currencyTimezone.timezone === "America/Godthab") { %> selected <% } %>>(UTC-03:00) Greenland</option>
+                                <option value="America/Cayenne" <% if (currencyTimezone && currencyTimezone.timezone === "America/Cayenne") { %> selected <% } %>>(UTC-03:00) Cayenne, Fortaleza</option>
+                                <option value="America/Argentina/Buenos_Aires" <% if (currencyTimezone && currencyTimezone.timezone === "America/Argentina/Buenos_Aires") { %> selected <% } %>>(UTC-03:00) Buenos Aires</option>
+                                <option value="America/Montevideo" <% if (currencyTimezone && currencyTimezone.timezone === "America/Montevideo") { %> selected <% } %>>(UTC-03:00) Montevideo</option>
+                                <option value="Etc/GMT+2" <% if (currencyTimezone && currencyTimezone.timezone === "Etc/GMT+2") { %> selected <% } %>>(UTC-02:00) Coordinated Universal Time-2</option>
+                                <option value="Atlantic/Cape_Verde" <% if (currencyTimezone && currencyTimezone.timezone === "Atlantic/Cape_Verde") { %> selected <% } %>>(UTC-01:00) Cape Verde</option>
+                                <option value="Atlantic/Azores" <% if (currencyTimezone && currencyTimezone.timezone === "Atlantic/Azores") { %> selected <% } %>>(UTC-01:00) Azores</option>
+                                <option value="Africa/Casablanca" <% if (currencyTimezone && currencyTimezone.timezone === "Africa/Casablanca") { %> selected <% } %>>(UTC+00:00) Casablanca</option>
+                                <option value="Atlantic/Reykjavik" <% if (currencyTimezone && currencyTimezone.timezone === "Atlantic/Reykjavik") { %> selected <% } %>>(UTC+00:00) Monrovia, Reykjavik</option>
+                                <option value="Europe/London" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/London") { %> selected <% } %>>(UTC+00:00) Dublin, Edinburgh, Lisbon, London</option>
+                                <option value="Etc/GMT" <% if (currencyTimezone && currencyTimezone.timezone === "Etc/GMT") { %> selected <% } %>>(UTC+00:00) Coordinated Universal Time</option>
+                                <option value="Europe/Berlin" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Berlin") { %> selected <% } %>>(UTC+01:00) Amsterdam, Berlin, Bern, Rome, Stockholm, Vienna</option>
+                                <option value="Europe/Paris" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Paris") { %> selected <% } %>>(UTC+01:00) Brussels, Copenhagen, Madrid, Paris</option>
+                                <option value="Africa/Lagos" <% if (currencyTimezone && currencyTimezone.timezone === "Africa/Lagos") { %> selected <% } %>>(UTC+01:00) West Central Africa</option>
+                                <option value="Europe/Budapest" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Budapest") { %> selected <% } %>>(UTC+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague</option>
+                                <option value="Europe/Warsaw" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Warsaw") { %> selected <% } %>>(UTC+01:00) Sarajevo, Skopje, Warsaw, Zagreb</option>
+                                <option value="Africa/Windhoek" <% if (currencyTimezone && currencyTimezone.timezone === "Africa/Windhoek") { %> selected <% } %>>(UTC+01:00) Windhoek</option>
+                                <option value="Europe/Istanbul" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Istanbul") { %> selected <% } %>>(UTC+02:00) Athens, Bucharest, Istanbul</option>
+                                <option value="Europe/Kiev" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Kiev") { %> selected <% } %>>(UTC+02:00) Helsinki, Kyiv, Riga, Sofia, Tallinn, Vilnius</option>
+                                <option value="Africa/Cairo" <% if (currencyTimezone && currencyTimezone.timezone === "Africa/Cairo") { %> selected <% } %>>(UTC+02:00) Cairo</option>
+                                <option value="Asia/Damascus" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Damascus") { %> selected <% } %>>(UTC+02:00) Damascus</option>
+                                <option value="Asia/Amman" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Amman") { %> selected <% } %>>(UTC+02:00) Amman</option>
+                                <option value="Africa/Johannesburg" <% if (currencyTimezone && currencyTimezone.timezone === "Africa/Johannesburg") { %> selected <% } %>>(UTC+02:00) Harare, Pretoria</option>
+                                <option value="Asia/Jerusalem" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Jerusalem") { %> selected <% } %>>(UTC+02:00) Jerusalem</option>
+                                <option value="Asia/Beirut" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Beirut") { %> selected <% } %>>(UTC+02:00) Beirut</option>
+                                <option value="Asia/Baghdad" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Baghdad") { %> selected <% } %>>(UTC+03:00) Baghdad</option>
+                                <option value="Europe/Minsk" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Minsk") { %> selected <% } %>>(UTC+03:00) Minsk</option>
+                                <option value="Asia/Riyadh" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Riyadh") { %> selected <% } %>>(UTC+03:00) Kuwait, Riyadh</option>
+                                <option value="Africa/Nairobi" <% if (currencyTimezone && currencyTimezone.timezone === "Africa/Nairobi") { %> selected <% } %>>(UTC+03:00) Nairobi</option>
+                                <option value="Asia/Tehran" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Tehran") { %> selected <% } %>>(UTC+03:30) Tehran</option>
+                                <option value="Europe/Moscow" <% if (currencyTimezone && currencyTimezone.timezone === "Europe/Moscow") { %> selected <% } %>>(UTC+04:00) Moscow, St. Petersburg, Volgograd</option>
+                                <option value="Asia/Tbilisi" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Tbilisi") { %> selected <% } %>>(UTC+04:00) Tbilisi</option>
+                                <option value="Asia/Yerevan" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Yerevan") { %> selected <% } %>>(UTC+04:00) Yerevan</option>
+                                <option value="Asia/Dubai" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Dubai") { %> selected <% } %>>(UTC+04:00) Abu Dhabi, Muscat</option>
+                                <option value="Asia/Baku" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Baku") { %> selected <% } %>>(UTC+04:00) Baku</option>
+                                <option value="Indian/Mauritius" <% if (currencyTimezone && currencyTimezone.timezone === "Indian/Mauritius") { %> selected <% } %>>(UTC+04:00) Port Louis</option>
+                                <option value="Asia/Kabul" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Kabul") { %> selected <% } %>>(UTC+04:30) Kabul</option>
+                                <option value="Asia/Tashkent" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Tashkent") { %> selected <% } %>>(UTC+05:00) Tashkent</option>
+                                <option value="Asia/Karachi" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Karachi") { %> selected <% } %>>(UTC+05:00) Islamabad, Karachi</option>
+                                <option value="Asia/Colombo" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Colombo") { %> selected <% } %>>(UTC+05:30) Sri Jayewardenepura Kotte</option>
+                                <option value="Asia/Kolkata" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Kolkata") { %> selected <% } %>>(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
+                                <option value="Asia/Kathmandu" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Kathmandu") { %> selected <% } %>>(UTC+05:45) Kathmandu</option>
+                                <option value="Asia/Almaty" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Almaty") { %> selected <% } %>>(UTC+06:00) Astana</option>
+                                <option value="Asia/Dhaka" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Dhaka") { %> selected <% } %>>(UTC+06:00) Dhaka</option>
+                                <option value="Asia/Yekaterinburg" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Yekaterinburg") { %> selected <% } %>>(UTC+06:00) Yekaterinburg</option>
+                                <option value="Asia/Yangon" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Yangon") { %> selected <% } %>>(UTC+06:30) Yangon</option>
+                                <option value="Asia/Bangkok" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Bangkok") { %> selected <% } %>>(UTC+07:00) Bangkok, Hanoi, Jakarta</option>
+                                <option value="Asia/Novosibirsk" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Novosibirsk") { %> selected <% } %>>(UTC+07:00) Novosibirsk</option>
+                                <option value="Asia/Krasnoyarsk" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Krasnoyarsk") { %> selected <% } %>>(UTC+08:00) Krasnoyarsk</option>
+                                <option value="Asia/Ulaanbaatar" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Ulaanbaatar") { %> selected <% } %>>(UTC+08:00) Ulaanbaatar</option>
+                                <option value="Asia/Shanghai" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Shanghai") { %> selected <% } %>>(UTC+08:00) Beijing, Chongqing, Hong Kong, Urumqi</option>
+                                <option value="Australia/Perth" <% if (currencyTimezone && currencyTimezone.timezone === "Australia/Perth") { %> selected <% } %>>(UTC+08:00) Perth</option>
+                                <option value="Asia/Singapore" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Singapore") { %> selected <% } %>>(UTC+08:00) Kuala Lumpur, Singapore</option>
+                                <option value="Asia/Taipei" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Taipei") { %> selected <% } %>>(UTC+08:00) Taipei</option>
+                                <option value="Asia/Irkutsk" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Irkutsk") { %> selected <% } %>>(UTC+09:00) Irkutsk</option>
+                                <option value="Asia/Seoul" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Seoul") { %> selected <% } %>>(UTC+09:00) Seoul</option>
+                                <option value="Asia/Tokyo" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Tokyo") { %> selected <% } %>>(UTC+09:00) Osaka, Sapporo, Tokyo</option>
+                                <option value="Australia/Darwin" <% if (currencyTimezone && currencyTimezone.timezone === "Australia/Darwin") { %> selected <% } %>>(UTC+09:30) Darwin</option>
+                                <option value="Australia/Adelaide" <% if (currencyTimezone && currencyTimezone.timezone === "Australia/Adelaide") { %> selected <% } %>>(UTC+09:30) Adelaide</option>
+                                <option value="Australia/Hobart" <% if (currencyTimezone && currencyTimezone.timezone === "Australia/Hobart") { %> selected <% } %>>(UTC+10:00) Hobart</option>
+                                <option value="Asia/Yakutsk" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Yakutsk") { %> selected <% } %>>(UTC+10:00) Yakutsk</option>
+                                <option value="Australia/Brisbane" <% if (currencyTimezone && currencyTimezone.timezone === "Australia/Brisbane") { %> selected <% } %>>(UTC+10:00) Brisbane</option>
+                                <option value="Pacific/Port_Moresby" <% if (currencyTimezone && currencyTimezone.timezone === "Pacific/Port_Moresby") { %> selected <% } %>>(UTC+10:00) Guam, Port Moresby</option>
+                                <option value="Australia/Sydney" <% if (currencyTimezone && currencyTimezone.timezone === "Australia/Sydney") { %> selected <% } %>>(UTC+10:00) Canberra, Melbourne, Sydney</option>
+                                <option value="Asia/Vladivostok" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Vladivostok") { %> selected <% } %>>(UTC+11:00) Vladivostok</option>
+                                <option value="Pacific/Guadalcanal" <% if (currencyTimezone && currencyTimezone.timezone === "Pacific/Guadalcanal") { %> selected <% } %>>(UTC+11:00) Solomon Islands, New Caledonia</option>
+                                <option value="Etc/GMT-12" <% if (currencyTimezone && currencyTimezone.timezone === "Etc/GMT-12") { %> selected <% } %>>(UTC+12:00) Coordinated Universal Time+12</option>
+                                <option value="Pacific/Fiji" <% if (currencyTimezone && currencyTimezone.timezone === "Pacific/Fiji") { %> selected <% } %>>(UTC+12:00) Fiji, Marshall Islands</option>
+                                <option value="Asia/Magadan" <% if (currencyTimezone && currencyTimezone.timezone === "Asia/Magadan") { %> selected <% } %>>(UTC+12:00) Magadan</option>
+                                <option value="Pacific/Auckland" <% if (currencyTimezone && currencyTimezone.timezone === "Pacific/Auckland") { %> selected <% } %>>(UTC+12:00) Auckland, Wellington</option>
+                                <option value="Pacific/Tongatapu" <% if (currencyTimezone && currencyTimezone.timezone === "Pacific/Tongatapu") { %> selected <% } %>>(UTC+13:00) Nuku'alofa</option>
+                                <option value="Pacific/Apia" <% if (currencyTimezone && currencyTimezone.timezone === "Pacific/Apia") { %> selected <% } %>>(UTC+13:00) Samoa</option>
+                              </select>
+                            </div>
+                          </div>
+                          <!--end::Input group-->
+
+                      </div>
+                      <!--end::Card body-->
+                      <!--begin::Actions-->
+                      <div class="card-footer d-flex justify-content-start py-6 px-9">
+                        <button type="submit" class="btn btn-primary me-5">Save</button>
+                      </div>
+                      <!--end::Actions-->
+                    </form>
+                    <!--end::Form-->
+                  </div>
+                  <!--end::Content-->
+                </div>
+              </div>
+              <!--end::Row-->
+            </div>
+            <!--end::Content container-->
+          </div>
+          <!--end::Content -->
+
+          <!--begin::Footer-->
+          <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+            <!--begin::Copyright-->
+            <div class="text-dark order-2 order-md-1">
+              <span class="text-muted fw-semibold me-1"></span>
+              <a class="text-gray-800 text-hover-primary"></a>
+            </div>
+            <!--end::Copyright-->
+          </div>
+          <!--end::Footer-->
+        </div>
+        <!--end::Content wrapper-->
+
+
+      </div>
+      <!--end::Main-->
+
+    </div>
+    <!--end:Wrapper-->
+  </div>
+  <!--end::Page-->
+</div>
+<!--end::App-->
+
+<!--begin::Scrolltop-->
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+  <i class="ki-duotone ki-arrow-up">
+    <span class="path1"></span>
+    <span class="path2"></span>
+  </i>
+</div>
+<!--end::Scrolltop-->
+
+
+<!-- partial:partials/header -->
+<%- include('../layouts/footer.ejs') %>

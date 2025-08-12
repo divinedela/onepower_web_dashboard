@@ -1,0 +1,315 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+  <!--begin::Page-->
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <!--begin::navbar-->
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <!--begin::navbar main-->
+      <%- include('../layouts/navbar.ejs') %>
+      <!--end::navbar main-->
+      <!--begin::Separator-->
+      <div class="app-header-separator"></div>
+      <!--end::Separator-->
+    </div>
+    <!--end::navbar-->
+
+    <!--begin::Wrapper-->
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <!--begin::Sidebar-->
+      <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <!--begin::Main sidebar-->
+        <%- include('../layouts/sidebar.ejs') %>
+        <!--end::Main sidebar-->
+      </div>
+      <!--end::Sidebar-->
+
+      <!--begin::Main-->
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <!--begin:: flex-column-fluidr-->
+        <div class="d-flex flex-column flex-column-fluid">
+          <!--begin::Toolbar-->
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <!--begin::Toolbar container-->
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <!--begin::Toolbar wrapper-->
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <!--begin::Page title-->
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <!--begin::Breadcrumb-->
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a href="#" class="text-gray-500">
+                        <i class="ki-solid ki-lovely fs-2x text-gray-400 me-n1"></i>
+                      </a>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Campaign</li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item">
+                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                    </li>
+                    <!--end::Item-->
+                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Add Campaign</li>
+                    <!--end::Item-->
+                  </ul>
+                  <!--end::Breadcrumb-->
+                </div>
+                <!--end::Page title-->
+              </div>
+              <!--end::Toolbar wrapper-->
+            </div>
+            <!--end::Toolbar container-->
+          </div>
+          <!--end::Toolbar-->
+
+          <!--begin::Content-->
+          <div id="kt_app_content" class="app-content flex-column-fluid pt-0">
+            <!--begin::Content container-->
+            <div id="kt_app_content_container" class="app-container container-fluid">
+
+              <!--begin::Row-->
+              <div class="row g-5">
+                <!-- bedin:: card -->
+                <div class="card mb-5 mb-xl-10 ">
+                  <!--begin::Card header-->
+                  <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
+                    <!--begin::Card title-->
+                    <div class="card-title m-0">
+                      <h3 class="fw-bold m-0 fs-1">Add Campaign</h3>
+                    </div>
+                    <!--end::Card title-->
+                  </div>
+                  <!--begin::Card header-->
+
+                  <!--begin:kt_account_settings_profile_details-->
+                  <div id="kt_account_settings_profile_details" class="collapse show">
+
+                    <!--begin::Form-->
+                    <form class="form" method="post" enctype="multipart/form-data" id="kt_modal_add_campaign_form">
+                      <!--begin::Card body-->
+                      <div class="card-body border-top ">
+
+                        <!-- flash message -->
+                        <% if(flash.error.length> 0){ %>
+                        <!--begin::Alert-->
+                        <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-8">
+                          <!--begin::Content-->
+                          <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
+                          <!--end::Content-->
+                          <!--begin::Close-->
+                          <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                            <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                          </button>
+                          <!--end::Close-->
+                        </div>
+                        <!--end::Alert-->
+                        <% } %>
+                        <!-- complete flash message -->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <!--begin::Label-->
+                          <label class=" required fw-semibold fs-6 mb-2">Image</label>
+                          <!--end::Label-->
+                          <!--begin::Col-->
+                          <div class="col-lg-9 fv-row fv-plugins-icon-container">
+                            <!--begin::Image input-->
+                            <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
+                              <!--begin::Preview existing avatar-->
+                              <img class="galleryimg image-input-wrapper w-150px h-150px" src="assets/media/svg/blank-image.svg" alt="" id="previewImage"></img>
+                              <!--end::Preview existing avatar-->
+                              <!--begin::Edit button-->
+                              <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow" data-kt-image-input-action="change" data-bs-toggle="tooltip" data-bs-dismiss="click" title="Add Image">
+                                <i class="ki-duotone ki-pencil fs-2 text-primary">
+                                  <span class="path1"></span>
+                                  <span class="path2"></span>
+                                </i>
+                                <!-- end::Edit button-->
+                                <!--begin::Inputs-->
+                                <input type="file" name="image" id="imageInput" accept=".png, .jpg, .jpeg" required />
+                                <!--end::Inputs-->
+                              </label>
+                              <!--end::Edit button-->
+                            </div>
+                            <!--end::Image input-->
+                            <!--begin::Hint-->
+                            <div class="form-text">Allowed file types: png, jpg, jpeg.</div>
+                            <!--end::Hint-->
+                          </div>
+                          <!-- end::Col -->
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <div class="col-sm-12 fv-row">
+                            <label class="form-label required">Name</label>
+                            <input type="text" class="form-control form-control-lg" name="name" placeholder="Enter Campaign Name"  required />
+                          </div>
+                         
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <div class="col-sm-6 fv-row">
+                            <label class="form-label required">Category</label>
+                            <select name="categoryId" class="form-select form-control-lg" data-control="select2" data-placeholder="Select Category" required>
+                              <option></option>
+                              <%  categoryData.forEach((item)=>{%>
+                              <option value="<%= item._id %>"><%= item.name %></option>
+                              <%}) %>
+                            </select>
+                          </div>
+                          <div class="col-sm-6 fv-row">
+                            <label class="form-label required">Amount</label>
+                            <input type="number" class="form-control form-control-lg" name="amount" placeholder="Enter Amount" required />
+                          </div>
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <div class="col-sm-6 fv-row">
+                            <label class="form-label required">Starting Date</label>
+                            <input class="form-control" name="starting_date" id="kt_datepicker_3" placeholder="Select Starting Date" required />
+                          </div>
+                          <div class="col-sm-6 fv-row">
+                            <label class="form-label required">Ending Date</label>
+                            <input class="form-control" name="ending_date" id="kt_datepicker_4" placeholder="Select Ending Date" required />
+                          </div>
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <div class="col-sm-6 fv-row">
+                            <label class="form-label required">Organizer Name</label>
+                            <input type="text" class="form-control form-control-lg" name="Organizer_name" placeholder="Enter Organizer Name" required />
+                          </div>
+                          <div class="col-sm-6 fv-row">
+                            <label class="form-label required">Organizer Image</label>
+                            <input type="file" name="organizer_image" id="imageInput" class="file-upload-default" accept=".png, .jpg, .jpeg">
+                            <div class="input-group col-xs-12">
+                              <input type="text" class="form-control form-control-lg file-upload-info" placeholder="Upload Organizer Image" required>
+                              <span class="input-group-append">
+                                <button class="file-upload-browse btn btn-primary buttonedit" type="button">Upload</button>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <div class="col-sm-12">
+                            <label class="form-label">Gallery</label>
+                            <input type="file" name="gallery" id="imageInput" class="file-upload-default" accept=".png, .jpg, .jpeg" multiple>
+                            <div class="input-group col-xs-12">
+                              <input type="text" class="form-control form-control-lg file-upload-info" placeholder="Choose multiple images for the gallery (Ctrl + Right-click)" readonly>
+                              <span class="input-group-append">
+                                <button class="file-upload-browse btn btn-primary buttonedit" type="button">Upload</button>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <div class="col-sm-12">
+                            <label class="form-label required">Description</label>
+                            <textarea class="form-control form-control-lg " rows="4" name="description" placeholder="Enter Description" data-kt-autosize="true" required></textarea>
+                          </div>
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row mb-10">
+                          <div class="col-sm-12">
+                            <label class="form-label required">Notification Title</label>
+                            <input type="text" class="form-control form-control-lg" name="notification_title" placeholder="Enter Notification Title" required />
+                          </div>
+                        </div>
+                        <!--end::Input group-->
+
+                        <!--begin::Input group-->
+                        <div class="row">
+                          <div class="col-sm-12">
+                            <label class="form-label required">Notification Message</label>
+                            <textarea type="text" class="form-control form-control-lg"  rows="4" data-kt-autosize="true" name="notification_message" placeholder="Enter Notification Message" required></textarea>
+                          </div>
+                        </div>
+                        <!--end::Input group-->
+
+                      </div>
+                      <!--end::Card body-->
+
+                      <!--begin::Actions-->
+                      <div class="card-footer">
+                        <button type="submit" class="btn btn-primary me-5">Add</button>
+                      </div>
+                      <!--end::Actions-->
+                    </form>
+                    <!--end::Form-->
+
+                  </div>
+                  <!-- end::kt_account_settings_profile_details -->
+                </div>
+                <!--end::card-->
+              </div>
+              <!-- end::Row -->
+            </div>
+            <!--end::Content container -->
+
+          </div>
+          <!--end::Content -->
+        </div>
+        <!--end:: flex-column-fluid -->
+
+        <!--begin::Footer-->
+        <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+          <!--begin::Copyright-->
+          <div class="text-dark order-2 order-md-1">
+            <span class="text-muted fw-semibold me-1"></span>
+            <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
+          </div>
+          <!--end::Copyright-->
+        </div>
+        <!--end::Footer-->
+      </div>
+      <!--end::Main-->
+    </div>
+    <!--end::Wrapper-->
+
+  </div>
+  <!--end::page-->
+
+</div>
+<!--end::App-->
+
+<!--begin::Scrolltop-->
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+  <i class="ki-duotone ki-arrow-up">
+    <span class="path1"></span>
+    <span class="path2"></span>
+  </i>
+</div>
+<!--end::Scrolltop-->
+
+
+<!-- partial:partials/header -->
+<%- include('../layouts/footer.ejs') %>

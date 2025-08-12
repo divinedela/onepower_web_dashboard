@@ -1,0 +1,5 @@
+.env*
+node_modules/
+firebase-*.json
+firebase.json
+.DS_Store
