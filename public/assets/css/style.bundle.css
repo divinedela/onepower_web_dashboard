@@ -41447,7 +41447,7 @@ h6,
 .show>.btn.btn-primary {
   color: #E6F4E7;
   border-color: var(--bs-primary-active);
-  background-color: #f2680c !important;
+  background-color: #ca9f3f !important;
 }
 
 .btn-check:checked+.btn.btn-primary i,
@@ -62310,7 +62310,7 @@ Table>tbody>tr.child ul.dtr-details>li {
 }
 
 .bg-primary-info {
-  background-color: #f2680c !important;
+  background-color: #ca9f3f !important;
 }
 
 /* custom notification */
