@@ -263,7 +263,7 @@
                                   <% if (admin.isAdmin === 1) { %>
                                     
                                     <!-- Edit Campaign (condition based on status) -->
-                                    <% if (campaign[i].campaign_status === "Ended" || campaign[i].campaign_status === "Running") { %>
+                                    <% if (campaign[i].campaign_status === "Ended") { %>
                                       <a data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" 
                                          data-message="You can't edit the <b><%= campaign[i].name %></b> campaign because it's already <b><%= campaign[i].campaign_status %></b> ...">
                                         <div class="symbol symbol-40px symbol-circle user-select-none">
