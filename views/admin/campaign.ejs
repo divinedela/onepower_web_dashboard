@@ -94,7 +94,7 @@
                         <span class="path1"></span>
                         <span class="path2"></span>
                       </i>
-                      <input type="text" data-kt-customer-table-filter="search" class="form-control w-250px ps-12" placeholder="Search Campaign" />
+                      <input type="text" data-kt-customer-table-filter="search" class="form-control w-250px ps-12" placeholder="Search Project" />
                     </div>
                     <!--end::Search-->
                   </div>
@@ -157,12 +157,12 @@
                           <th class="min-w-40px">Img</th>
                           <th class="min-w-100px">Name</th>
                           <th class="min-w-100px">Category</th>
-                          <th class="min-w-100px">Organizer </th>
-                          <th class="min-w-100px">Starting</th>
-                          <th class="min-w-100px">Ending</th>
+                          <!-- <th class="min-w-100px">Organizer </th> -->
+                          <th class="min-w-100px">Start Date</th>
+                          <th class="min-w-100px">End Date</th>
                           <th class="min-w-70px">Amt</th>
-                          <th class="min-w-70px">Don</th>
-                          <th class="min-w-70px">Rem</th>
+                          <th class="min-w-70px">Donated</th>
+                          <th class="min-w-70px">Remaining</th>
                           <th class="min-w-70px">Active</th>
                           <th class="min-w-70px">Status</th>
                           <th class="min-w-50px">Actions</th>
@@ -183,18 +183,6 @@
                           </td>
                           <td class="fw-bolder text-dark"><%= campaign[i].name %> </td>
                           <td class="fw-bolder text-dark"><%= campaign[i].categoryId ? campaign[i].categoryId.name : "N/A" %> </td>
-                          <td class="pe-0">
-                            <div class="d-flex align-items-center">
-                                <!-- begin::Thumbnail -->
-                            <a href="<%= IMAGE_URL + campaign[i].organizer_image %>" class=" symbol symbol-circle symbol-25px overflow-hidden me-3" data-fslightbox="lightbox-basic">
-                              <img src="<%=  IMAGE_URL + campaign[i].organizer_image %>" alt="<%= campaign[i].organizer_image %>" class="symbol-label border border-gray-400">
-                           </a>
-                           <!-- end::Thumbnail -->
-                           <!--begin::Name-->
-                           <a class="text-gray-600 text-hover-primary"><%= campaign[i].organizer_name %> </a>
-                           <!--end::Name-->
-                          </div>
-                         </td>
                           <td class="pe-0 fw-bold text-gray-800">
                             <%= new Date( campaign[i].starting_date).toLocaleDateString('en-US', {  year: 'numeric', month: 'short', day: 'numeric' }) %>
                           </td>
@@ -238,7 +226,7 @@
                             <div class="d-flex align-items-center">
                               <!-- View donor -->
                               <a href="<%= process.env.BASE_URL %>donation?id=<%= campaign[i]._id %>" 
-                                 class="menu-link" title="View Donation" 
+                                 class="menu-link" title="View Donations" 
                                  data-bs-toggle="tooltip" data-bs-trigger="hover" data-bs-dismiss="click" data-bs-placement="top">
                                 <div class="symbol symbol-40px symbol-circle user-select-none">
                                   <div class="symbol-label bg-light-warning text-warning">
