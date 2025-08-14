@@ -21,7 +21,6 @@ routes.post("/checkRegisterUser", apiController.checkRegisterUser);
 routes.post("/signUp", apiController.signUp);
 
 routes.post("/verifyOTP", apiController.verifyOTP);
-routes.post("/otp/testOTP", apiController.testOTP);
 
 // Routes For Sign In
 routes.post("/signIn", apiController.signIn);
