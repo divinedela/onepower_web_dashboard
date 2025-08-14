@@ -3,7 +3,6 @@
 
 <!--begin::App-->
 <div class="d-flex flex-column flex-root app-root" id="kt_app_root">
-
   <!--begin::Page-->
   <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
     <!--begin::navbar-->
@@ -20,7 +19,17 @@
     <!--begin::Wrapper-->
     <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
       <!--begin::Sidebar-->
-      <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+      <div
+        id="kt_app_sidebar"
+        class="app-sidebar flex-column"
+        data-kt-drawer="true"
+        data-kt-drawer-name="app-sidebar"
+        data-kt-drawer-activate="{default: true, lg: false}"
+        data-kt-drawer-overlay="true"
+        data-kt-drawer-width="250px"
+        data-kt-drawer-direction="start"
+        data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle"
+      >
         <!--begin::Main sidebar-->
         <%- include('../layouts/sidebar.ejs') %>
         <!--end::Main sidebar-->
@@ -34,36 +43,43 @@
           <!--begin::Toolbar-->
           <div id="kt_app_toolbar" class="app-toolbar pt-5">
             <!--begin::Toolbar container-->
-            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+            <div
+              id="kt_app_toolbar_container"
+              class="app-container container-fluid d-flex align-items-stretch"
+            >
               <!--begin::Toolbar wrapper-->
-              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+              <div
+                class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100"
+              >
                 <!--begin::Page title-->
                 <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
                   <!--begin::Breadcrumb-->
-                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
-                    <!--begin::Item-->
+                  <ul
+                    class="breadcrumb breadcrumb-separatorless fw-semibold mb-6"
+                  >
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
                       <a href="#" class="text-gray-500">
-                        <i class="ki-solid ki-note-2 fs-2x text-gray-400 me-n1"></i>
+                        <i
+                          class="ki-solid ki-note-2 fs-2x text-gray-400 me-n1"
+                        ></i>
                       </a>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
-                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                      <i
+                        class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"
+                      ></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
-                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Category</li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      Category
+                    </li>
                     <li class="breadcrumb-item">
-                      <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
+                      <i
+                        class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"
+                      ></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
-                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Add Category</li>
-                    <!--end::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      Add Category
+                    </li>
                   </ul>
                   <!--end::Breadcrumb-->
                 </div>
@@ -78,94 +94,160 @@
           <!--begin::Content-->
           <div id="kt_app_content" class="app-content flex-column-fluid pt-0">
             <!--begin::Content container-->
-            <div id="kt_app_content_container" class="app-container container-fluid">
-
+            <div
+              id="kt_app_content_container"
+              class="app-container container-fluid"
+            >
               <!--begin::Row-->
               <div class="row g-5">
-                <!-- bedin:: card -->
+                <!--begin::Card-->
                 <div class="card mb-5 mb-xl-10">
                   <!--begin::Card header-->
-                  <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
-                    <!--begin::Card title-->
+                  <div
+                    class="card-header border-0 cursor-pointer"
+                    role="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#kt_account_profile_details"
+                    aria-expanded="true"
+                    aria-controls="kt_account_profile_details"
+                  >
                     <div class="card-title m-0">
                       <h3 class="fw-bold m-0 fs-1">Add Category</h3>
                     </div>
-                    <!--end::Card title-->
                   </div>
-                  <!--begin::Card header-->
+                  <!--end::Card header-->
+
                   <!--begin::Content-->
-                  <div id="kt_account_settings_profile_details" class="collapse show">
-
+                  <div
+                    id="kt_account_settings_profile_details"
+                    class="collapse show"
+                  >
                     <!--begin::Form-->
-                    <form class="form" method="post" enctype="multipart/form-data">
+                    <form
+                      class="form"
+                      method="post"
+                      enctype="multipart/form-data"
+                    >
                       <!--begin::Card body-->
-                      <div class="card-body border-top ">
-
-                         <!-- flash message -->
-                    <% if(flash.error.length> 0){ %>
-                      <!--begin::Alert-->
-                      <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
-                        <!--begin::Content-->
-                        <span class="fs-4 text-danger fw-bold text-center ps-10"><%= flash.error %></span>
-                        <!--end::Content-->
-                        <!--begin::Close-->
-                        <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
-                          <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
-                        </button>
-                        <!--end::Close-->
-                      </div>
-                      <!--end::Alert-->
-                      <% } %>
-                      <!-- complete flash message -->
-
-                       <!--begin::Input group-->
-                       <div class="row mb-10">
-                        <!--begin::Label-->
-                        <label class="col-lg-2 col-form-label required fw-semibold fs-6">Image</label>
-                        <!--end::Label-->
-                        <!--begin::Col-->
-                        <div class="col-lg-10 fv-row fv-plugins-icon-container">
-                          <!--begin::Image input-->
-                          <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
-                            <!--begin::Preview existing avatar-->
-                            <img class="galleryimg image-input-wrapper w-150px h-150px" src="assets/media/svg/blank-image.svg" alt="" id="previewImage"></img>
-                            <!--end::Preview existing avatar-->
-                            <!--begin::Edit button-->
-                            <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow" data-kt-image-input-action="change" data-bs-toggle="tooltip" data-bs-dismiss="click" title="Add Image">
-                              <i class="ki-duotone ki-pencil fs-2 text-primary">
-                                <span class="path1"></span>
-                                <span class="path2"></span>
-                              </i>
-                              <!-- end::Edit button-->
-                              <!--begin::Inputs-->
-                              <input type="file" name="image" id="imageInput" accept=".png, .jpg, .jpeg" required />
-                              <!--end::Inputs-->
-                            </label>
-                            <!--end::Edit button-->
-                          </div>
-                          <!--end::Image input-->
-                          <!--begin::Hint-->
-                          <div class="form-text">Allowed file types: png, jpg, jpeg.</div>
-                          <!--end::Hint-->
+                      <div class="card-body border-top">
+                        <!-- flash message -->
+                        <% if (flash.error.length > 0) { %>
+                        <div
+                          class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10"
+                        >
+                          <span
+                            class="fs-4 text-danger fw-bold text-center ps-10"
+                            ><%= flash.error %></span
+                          >
+                          <button
+                            type="button"
+                            class="btn btn-icon ms-sm-auto"
+                            data-bs-dismiss="alert"
+                          >
+                            <i
+                              class="ki-duotone ki-cross fs-1 text-danger fw-bold"
+                            >
+                              <span class="path1"></span
+                              ><span class="path2"></span>
+                            </i>
+                          </button>
                         </div>
-                        <!-- end::Col -->
-                      </div>
-                      <!--end::Input group-->
+                        <% } %>
+                        <!-- end::flash -->
 
-                        <!--begin::Input group-->
+                        <!--begin::Image input-->
+                        <div class="row mb-10">
+                          <label class="required fw-semibold fs-6 mb-2"
+                            >Image</label
+                          >
+                          <div
+                            class="col-lg-9 fv-row fv-plugins-icon-container"
+                          >
+                            <div
+                              class="image-input image-input-outline image-input-placeholder"
+                              data-kt-image-input="true"
+                            >
+                              <!-- preview -->
+                              <img
+                                class="galleryimg image-input-wrapper w-150px h-150px"
+                                src="assets/media/svg/blank-image.svg"
+                                alt="preview"
+                                id="categoryImagePreview"
+                                onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';"
+                              />
+                              <!-- actions -->
+                              <div class="d-flex align-items-center gap-2 mt-3">
+                                <!-- Add -->
+                                <label
+                                  class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow"
+                                  data-bs-toggle="tooltip"
+                                  data-bs-dismiss="click"
+                                  title="Add Image"
+                                >
+                                  <i
+                                    class="ki-duotone ki-pencil fs-2 text-primary"
+                                  >
+                                    <span class="path1"></span
+                                    ><span class="path2"></span>
+                                  </i>
+                                  <input
+                                    type="file"
+                                    name="image"
+                                    id="categoryImageInput"
+                                    accept=".png,.jpg,.jpeg,.webp"
+                                    required
+                                    hidden
+                                  />
+                                </label>
+                                <!-- Clear -->
+                                <button
+                                  type="button"
+                                  class="btn btn-icon btn-circle btn-color-muted btn-active-color-danger w-30px h-30px bg-body shadow"
+                                  id="categoryImageClearBtn"
+                                  data-bs-toggle="tooltip"
+                                  title="Clear"
+                                >
+                                  <i
+                                    class="ki-duotone ki-cross fs-2 text-danger"
+                                  >
+                                    <span class="path1"></span
+                                    ><span class="path2"></span>
+                                  </i>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="form-text">
+                              Allowed file types: png, jpg, jpeg, webp.
+                            </div>
+                          </div>
+                        </div>
+                        <!--end::Image input-->
+
+                        <!--begin::Name-->
                         <div class="row">
-                          <label class="col-lg-2  col-form-label fw-semibold fs-6 required">Name</label>
+                          <label
+                            class="col-lg-2 col-form-label fw-semibold fs-6 required"
+                            >Name</label
+                          >
                           <div class="col-lg-10 fv-row">
-                            <input type="text" class="form-control form-control-lg" name="name" placeholder="Enter category name" required />
+                            <input
+                              type="text"
+                              class="form-control form-control-lg"
+                              name="name"
+                              placeholder="Enter category name"
+                              required
+                            />
                           </div>
                         </div>
-                        <!--end::Input group-->
-
+                        <!--end::Name-->
                       </div>
                       <!--end::Card body-->
+
                       <!--begin::Actions-->
                       <div class="card-footer d-flex justify-content-start">
-                        <button type="submit" class="btn btn-primary">Add</button>
+                        <button type="submit" class="btn btn-primary">
+                          Add
+                        </button>
                       </div>
                       <!--end::Actions-->
                     </form>
@@ -173,38 +255,37 @@
                   </div>
                   <!--end::Content-->
                 </div>
-                <!-- end:: card  -->
+                <!--end::Card-->
               </div>
               <!--end::Row-->
-              
             </div>
             <!--end::Content container-->
           </div>
           <!--end::Content -->
 
           <!--begin::Footer-->
-          <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
-            <!--begin::Copyright-->
+          <div
+            id="kt_app_footer"
+            class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3"
+          >
             <div class="text-dark order-2 order-md-1">
               <span class="text-muted fw-semibold me-1"></span>
-              <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
+              <a
+                href="#"
+                target="_blank"
+                class="text-gray-800 text-hover-primary"
+              ></a>
             </div>
-            <!--end::Copyright-->
           </div>
           <!--end::Footer-->
         </div>
         <!--end::Content wrapper-->
-
-
       </div>
       <!--end::Main-->
-
     </div>
-    <!--end:Wrapper-->
-
+    <!--end::Wrapper-->
   </div>
   <!--end::Page-->
-
 </div>
 <!--end::App-->
 
@@ -217,6 +298,35 @@
 </div>
 <!--end::Scrolltop-->
 
+<!-- Image picker & preview helper -->
+<script>
+  (function () {
+    const input = document.getElementById("categoryImageInput");
+    const preview = document.getElementById("categoryImagePreview");
+    const clearBtn = document.getElementById("categoryImageClearBtn");
+    let objectUrl = null;
+
+    if (input) {
+      input.addEventListener("change", function () {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        if (this.files && this.files[0]) {
+          objectUrl = URL.createObjectURL(this.files[0]);
+          preview.src = objectUrl;
+        } else {
+          preview.src = "assets/media/svg/blank-image.svg";
+        }
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        if (input) input.value = "";
+        preview.src = "assets/media/svg/blank-image.svg";
+      });
+    }
+  })();
+</script>
 
 <!-- partial:partials/header -->
 <%- include('../layouts/footer.ejs') %>
