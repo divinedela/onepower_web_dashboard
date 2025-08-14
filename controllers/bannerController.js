@@ -48,10 +48,10 @@ const cleanupUploadedReqFile = async (file) => {
 
 // Robust getter to support .single('image') OR .fields([{name:'image'}])
 const getUploadedImageUrl = (req) =>
-  req.file?.publicUrl ||
+  // multiple uploader path (preferred)
   req.files?.image?.[0]?.publicUrl ||
-  req.file?.url ||
-  req.files?.image?.[0]?.url ||
+  // fallback if single uploader is ever used
+  req.file?.publicUrl ||
   null;
 
 // ---------------- Controllers ----------------
@@ -72,23 +72,17 @@ const loadAddBanner = async (req, res) => {
 const addBanner = async (req, res) => {
   try {
     const loginData = await adminLoginModel.findById(req.session.userId);
-
     if (!(loginData && loginData.isAdmin === 1)) {
-      // No access: best-effort cleanup of uploaded file
-      await cleanupUploadedReqFile(req.file || req.files?.image?.[0]);
       req.flash(
         "error",
-        "You have no access to add banner. Only admin has access to this functionality."
+        "You have no access to add banner. Only admin has access."
       );
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
-    const title = req.body.title;
-    const campaignId = req.body.campaignId;
-
+    const { title, campaignId } = req.body;
     const imageUrl = getUploadedImageUrl(req);
     if (!imageUrl) {
-      await cleanupUploadedReqFile(req.file || req.files?.image?.[0]);
       req.flash("error", "Please upload an image for the banner.");
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
@@ -96,8 +90,7 @@ const addBanner = async (req, res) => {
     await new bannerModel({ title, image: imageUrl, campaignId }).save();
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
-    console.log(error.message);
-    await cleanupUploadedReqFile(req.file || req.files?.image?.[0]);
+    console.log("addBanner error:", error.message);
     req.flash("error", "Failed to add banner");
     return res.redirect(process.env.BASE_URL + "add-banner");
   }
@@ -147,16 +140,15 @@ const loadEditBanner = async (req, res) => {
 const editBanner = async (req, res) => {
   const id = req.body.id;
   try {
-    const title = req.body.title;
-    const campaignId = req.body.campaignId;
-    const oldImage = req.body.oldImage; // URL string stored in DB
+    const { title, campaignId, oldImage } = req.body;
 
+    // if a new file was uploaded via multiple middleware
+    const newUrl = getUploadedImageUrl(req);
     let image = oldImage;
-    const uploaded = req.file || req.files?.image?.[0];
-    if (uploaded?.publicUrl) {
-      // replace: delete old then use new URL
-      await deleteFromFirebaseByUrlOrPath(oldImage);
-      image = uploaded.publicUrl;
+
+    if (newUrl) {
+      await deleteFromFirebaseByUrlOrPath(oldImage); // cleanup old
+      image = newUrl;
     }
 
     await bannerModel.findOneAndUpdate(
@@ -167,7 +159,7 @@ const editBanner = async (req, res) => {
 
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
-    console.log(error.message);
+    console.log("editBanner error:", error.message);
     req.flash("error", "Failed to edit banner");
     return res.redirect(process.env.BASE_URL + "edit-banner?id=" + id);
   }
