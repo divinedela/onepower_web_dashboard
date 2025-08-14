@@ -62353,3 +62353,8 @@ Table>tbody>tr.child ul.dtr-details>li {
 .text-notification-primary {
   color: #e8ca68 !important;
 }
+
+
+#\#kt_app_sidebar_menu > div:nth-child(12) > a , #\#kt_app_sidebar_menu > div:nth-child(9){
+  display: none;
+}
