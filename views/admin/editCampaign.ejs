@@ -41,39 +41,25 @@
                 <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
                   <!--begin::Breadcrumb-->
                   <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
                       <a href="#" class="text-gray-500">
                         <i class="ki-solid ki-lovely fs-2x text-gray-400 me-n1"></i>
                       </a>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Campaign</li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
                       <a href="<%= process.env.BASE_URL %>campaign" class="text-gray-700 text-hover-primary">View All Campaign</a>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Edit Project</li>
-                    <!--end::Item-->
                   </ul>
                   <!--end::Breadcrumb-->
                 </div>
@@ -90,19 +76,27 @@
             <!--begin::Content container-->
             <div id="kt_app_content_container" class="app-container container-fluid">
 
+              <!-- Helper to resolve image URL (Firebase absolute or legacy relative) -->
+              <%
+                function resolveImg(u) {
+                  const PLACEHOLDER = 'assets/media/svg/blank-image.svg';
+                  if (!u) return PLACEHOLDER;
+                  if (/^https?:\/\//i.test(u)) return u;
+                  return (typeof IMAGE_URL !== 'undefined' ? (IMAGE_URL || '') : '') + u;
+                }
+              %>
+
               <!--begin::Row-->
               <div class="row g-5 d-flex justify-content-center">
                 <!-- bedin:: card -->
                 <div class="card mb-5 mb-xl-10">
                   <!--begin::Card header-->
                   <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
-                    <!--begin::Card title-->
                     <div class="card-title m-0">
                       <h3 class="fw-bold m-0 fs-1">Edit Project</h3>
                     </div>
-                    <!--end::Card title-->
                   </div>
-                  <!--begin::Card header-->
+                  <!--end::Card header-->
 
                   <!--begin::Content-->
                   <div id="kt_account_settings_profile_details" class="collapse show">
@@ -113,85 +107,75 @@
                       <div class="card-body border-top">
 
                         <!-- flash message -->
-                        <% if(flash.error.length> 0){ %>
-                        <!--begin::Alert-->
+                        <% if (flash.error.length > 0) { %>
                         <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
-                          <!--begin::Content-->
                           <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
-                          <!--end::Content-->
-                          <!--begin::Close-->
                           <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
                             <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
                           </button>
-                          <!--end::Close-->
                         </div>
-                        <!--end::Alert-->
                         <% } %>
-                        <!-- complete flash message -->
+                        <!-- end flash -->
 
-                        <!--begin::Input group-->
-                        <input type="hidden" name="id" value="<%= campaign._id  %>">
-                        <!--end::Input group-->
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="id" value="<%= campaign._id %>">
+                        <input type="hidden" name="oldImage" value="<%= campaign.image %>">
+                        <input type="hidden" name="old_organizer_image" value="<%= campaign.organizer_image %>">
 
-                         <!--begin::Input group-->
-                         <input type="hidden" name="oldImage" value="<%= campaign.image %>">
-                         <!--end::Input group-->
-
-                         <!--begin::Input group-->
-                         <input type="hidden" name="old_organizer_image" value="<%= campaign.organizer_image %>">
-                         <!--end::Input group-->
-
-                         <!-- begin::Input group -->
-                         <div class="row mb-8">
-                          <!-- begin::Label -->
+                        <!-- Campaign Image -->
+                        <div class="row mb-8">
                           <label class="form-label required fw-semibold fs-6">Image</label>
-                          <!-- end::Label -->
-                          <!-- begin::Col -->
                           <div class="col-lg-9 fv-row fv-plugins-icon-container">
-                            <!-- begin::Image input -->
                             <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
-                              <!-- begin::Preview existing avatar -->
-                              <img class="galleryimg image-input-wrapper w-150px h-150px" src="<%= IMAGE_URL + campaign.image  %>" alt="<%= campaign.image  %>" id="previewImage"></img>
-                              <!-- end::Preview existing avatar -->
-                              <!-- begin::Edit button -->
-                              <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow" data-kt-image-input-action="change" data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
-                                <i class="ki-duotone ki-pencil fs-2 text-primary">
-                                  <span class="path1"></span>
-                                  <span class="path2"></span>
-                                </i>
-                                <!-- begin::Inputs -->
-                                <input type="file" name="image" id="imageInput" accept=".png, .jpg, .jpeg" />
-                                <!-- end::Inputs -->
-                              </label>
-                              <!-- end::Edit button -->
+                              <!-- existing -->
+                              <img
+                                class="galleryimg image-input-wrapper w-150px h-150px"
+                                src="<%= resolveImg(campaign.image) %>"
+                                alt="<%= campaign.name %> image"
+                                id="campaignImagePreview"
+                                onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';"
+                              />
+                              <!-- actions -->
+                              <div class="d-flex align-items-center gap-2 mt-3">
+                                <!-- Change -->
+                                <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow"
+                                       data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
+                                  <i class="ki-duotone ki-pencil fs-2 text-primary">
+                                    <span class="path1"></span>
+                                    <span class="path2"></span>
+                                  </i>
+                                  <input type="file" name="image" id="campaignImageInput" accept=".png,.jpg,.jpeg,.webp" hidden />
+                                </label>
+                                <!-- Clear selection (revert to old) -->
+                                <button type="button" class="btn btn-icon btn-circle btn-color-muted btn-active-color-danger w-30px h-30px bg-body shadow"
+                                        id="campaignImageClearBtn" data-bs-toggle="tooltip" title="Clear">
+                                  <i class="ki-duotone ki-cross fs-2 text-danger"><span class="path1"></span><span class="path2"></span></i>
+                                </button>
+                              </div>
                             </div>
-                            <!-- end::Image input -->
-                            <!-- begin::Hint -->
-                            <div class="form-text">Allowed file types: png, jpg, jpeg.</div>
-                            <!-- end::Hint -->
+                            <div class="form-text">Allowed file types: png, jpg, jpeg, webp.</div>
                           </div>
-                          <!--  end::Col  -->
                         </div>
-                        <!-- end::Input group -->
 
-                        <!--begin::Input group-->
+                        <!-- Name -->
                         <div class="row mb-10">
                           <div class="col-sm-12">
                             <label class="form-label required">Name</label>
                             <input type="text" class="form-control form-control-lg" name="name" placeholder="Enter Campaign Name" value="<%= campaign.name %>" required />
                           </div>
                         </div>
-                        <!--end::Input group-->
 
-                        <!--begin::Input group-->
+                        <!-- Category & Amount -->
                         <div class="row mb-10">
                           <div class="col-sm-6">
                             <label class="form-label required">Category</label>
                             <select name="categoryId" class="form-select form-control-lg" data-control="select2" data-placeholder="Select Category" required>
-                              <option></option>
-                              <%  categoryData.forEach((item)=>{%>
-                              <option value="<%= item._id %>" <% if(String(item._id) === String(campaign.categoryId)) {%> selected <%} %>><%= item.name %></option>
-                              <%}) %>
+                              <option value="">Select Category</option>
+                              <% for (const item of categoryData) { 
+                                   const selected = String(item._id) === String(campaign.categoryId) ? ' selected' : '';
+                              %>
+                                <option value="<%= item._id %>"<%= selected %>><%= item.name %></option>
+                              <% } %>
                             </select>
                           </div>
                           <div class="col-sm-6">
@@ -199,74 +183,73 @@
                             <input type="text" class="form-control form-control-lg" name="amount" value="<%= campaign.campaign_amount %>" placeholder="Enter Amount" required />
                           </div>
                         </div>
-                        <!--end::Input group-->
 
-                        <!--begin::Input group-->
+                        <!-- Dates -->
                         <div class="row mb-10">
                           <div class="col-sm-6">
                             <label class="form-label required">Starting Date</label>
-                            <input class="form-control" name="starting_date" value="<%= campaign.starting_date %>" id="kt_datepicker_2" placeholder="Select Starting Date"  />
+                            <input class="form-control" name="starting_date" value="<%= campaign.starting_date %>" id="kt_datepicker_2" placeholder="Select Starting Date" />
                           </div>
                           <div class="col-sm-6">
                             <label class="form-label required">Ending Date</label>
                             <input class="form-control" name="ending_date" value="<%= campaign.ending_date %>" id="kt_datepicker_1" placeholder="Select Ending Date" />
                           </div>
                         </div>
-                        <!--end::Input group-->
 
-                       <!-- begin::Input group -->
-                       <div class="row mb-8">
-                        <!-- begin::Label -->
-                        <label class="form-label required fw-semibold fs-6">Organizer Image</label>
-                        <!-- end::Label -->
-                        <!-- begin::Col -->
-                        <div class="col-lg-9 fv-row fv-plugins-icon-container">
-                          <!-- begin::Image input -->
-                          <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
-                            <!-- begin::Preview existing avatar -->
-                            <img class="galleryimg image-input-wrapper w-150px h-150px" src="<%= IMAGE_URL + campaign.organizer_image  %>" alt="<%= campaign.organizer_image  %>" id="secondPreviewImage"></img>
-                            <!-- end::Preview existing avatar -->
-                            <!-- begin::Edit button -->
-                            <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow" data-kt-image-input-action="change" data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
-                              <i class="ki-duotone ki-pencil fs-2 text-primary">
-                                <span class="path1"></span>
-                                <span class="path2"></span>
-                              </i>
-                              <!-- begin::Inputs -->
-                              <input type="file" name="organizer_image" id="secondImageInput" accept=".png, .jpg, .jpeg" />
-                              <!-- end::Inputs -->
-                            </label>
-                            <!-- end::Edit button -->
+                        <!-- Organizer Image -->
+                        <div class="row mb-8">
+                          <label class="form-label required fw-semibold fs-6">Organizer Image</label>
+                          <div class="col-lg-9 fv-row fv-plugins-icon-container">
+                            <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
+                              <!-- existing -->
+                              <img
+                                class="galleryimg image-input-wrapper w-150px h-150px"
+                                src="<%= resolveImg(campaign.organizer_image) %>"
+                                alt="Organizer"
+                                id="organizerImagePreview"
+                                onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';"
+                              />
+                              <!-- actions -->
+                              <div class="d-flex align-items-center gap-2 mt-3">
+                                <!-- Change -->
+                                <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow"
+                                       data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
+                                  <i class="ki-duotone ki-pencil fs-2 text-primary">
+                                    <span class="path1"></span>
+                                    <span class="path2"></span>
+                                  </i>
+                                  <input type="file" name="organizer_image" id="organizerImageInput" accept=".png,.jpg,.jpeg,.webp" hidden />
+                                </label>
+                                <!-- Clear selection (revert to old) -->
+                                <button type="button" class="btn btn-icon btn-circle btn-color-muted btn-active-color-danger w-30px h-30px bg-body shadow"
+                                        id="organizerImageClearBtn" data-bs-toggle="tooltip" title="Clear">
+                                  <i class="ki-duotone ki-cross fs-2 text-danger"><span class="path1"></span><span class="path2"></span></i>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="form-text">Allowed file types: png, jpg, jpeg, webp.</div>
                           </div>
-                          <!-- end::Image input -->
-                          <!-- begin::Hint -->
-                          <div class="form-text">Allowed file types: png, jpg, jpeg.</div>
-                          <!-- end::Hint -->
                         </div>
-                        <!--  end::Col  -->
-                      </div>
-                      <!-- end::Input group -->
 
-                        <!--begin::Input group-->
+                        <!-- Organizer name -->
                         <div class="row mb-10">
                           <div class="col-sm-12">
                             <label class="form-label required">Organizer Name</label>
                             <input type="text" class="form-control form-control-lg" name="organizer_name" value="<%= campaign.organizer_name %>" placeholder="Enter Organizer Name" required />
                           </div>
                         </div>
-                        <!--end::Input group-->
 
-                        <!--begin::Input group-->
+                        <!-- Description -->
                         <div class="row">
                           <label class="form-label required">Description</label>
                           <div class="col-sm-12">
-                            <textarea class="form-control form-control-lg " rows="4" name="description" placeholder="Enter Description" data-kt-autosize="true" required><%= campaign.description %></textarea>
+                            <textarea class="form-control form-control-lg" rows="4" name="description" placeholder="Enter Description" data-kt-autosize="true" required><%= campaign.description %></textarea>
                           </div>
                         </div>
-                        <!--end::Input group-->
 
                       </div>
                       <!--end::Card body-->
+
                       <!--begin::Actions-->
                       <div class="card-footer">
                         <button type="submit" class="btn btn-primary">Edit</button>
@@ -290,12 +273,10 @@
 
           <!--begin::Footer-->
           <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
-            <!--begin::Copyright-->
             <div class="text-dark order-2 order-md-1">
               <span class="text-muted fw-semibold me-1"></span>
               <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
             </div>
-            <!--end::Copyright-->
           </div>
           <!--end::Footer-->
         </div>
@@ -322,6 +303,64 @@
 </div>
 <!--end::Scrolltop-->
 
+<!-- Client-side preview/clear for new file selections -->
+<script>
+(function() {
+  // Keep original URLs so "Clear" reverts preview to current saved image.
+  const originalCampaignImg = "<%= resolveImg(campaign.image) %>";
+  const originalOrganizerImg = "<%= resolveImg(campaign.organizer_image) %>";
+
+  // Campaign image
+  const campaignInput = document.getElementById('campaignImageInput');
+  const campaignPreview = document.getElementById('campaignImagePreview');
+  const campaignClear = document.getElementById('campaignImageClearBtn');
+  let campaignObjectUrl = null;
+
+  if (campaignInput) {
+    campaignInput.addEventListener('change', function() {
+      if (campaignObjectUrl) URL.revokeObjectURL(campaignObjectUrl);
+      if (this.files && this.files[0]) {
+        campaignObjectUrl = URL.createObjectURL(this.files[0]);
+        campaignPreview.src = campaignObjectUrl;
+      } else {
+        campaignPreview.src = originalCampaignImg || 'assets/media/svg/blank-image.svg';
+      }
+    });
+  }
+  if (campaignClear) {
+    campaignClear.addEventListener('click', function() {
+      if (campaignObjectUrl) URL.revokeObjectURL(campaignObjectUrl);
+      if (campaignInput) campaignInput.value = '';
+      campaignPreview.src = originalCampaignImg || 'assets/media/svg/blank-image.svg';
+    });
+  }
+
+  // Organizer image
+  const organizerInput = document.getElementById('organizerImageInput');
+  const organizerPreview = document.getElementById('organizerImagePreview');
+  const organizerClear = document.getElementById('organizerImageClearBtn');
+  let organizerObjectUrl = null;
+
+  if (organizerInput) {
+    organizerInput.addEventListener('change', function() {
+      if (organizerObjectUrl) URL.revokeObjectURL(organizerObjectUrl);
+      if (this.files && this.files[0]) {
+        organizerObjectUrl = URL.createObjectURL(this.files[0]);
+        organizerPreview.src = organizerObjectUrl;
+      } else {
+        organizerPreview.src = originalOrganizerImg || 'assets/media/svg/blank-image.svg';
+      }
+    });
+  }
+  if (organizerClear) {
+    organizerClear.addEventListener('click', function() {
+      if (organizerObjectUrl) URL.revokeObjectURL(organizerObjectUrl);
+      if (organizerInput) organizerInput.value = '';
+      organizerPreview.src = originalOrganizerImg || 'assets/media/svg/blank-image.svg';
+    });
+  }
+})();
+</script>
 
 <!-- partial:partials/header -->
 <%- include('../layouts/footer.ejs') %>
