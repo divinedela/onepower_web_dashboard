@@ -41,33 +41,23 @@
                 <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
                   <!--begin::Breadcrumb-->
                   <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
                       <a href="" class="text-gray-500">
                         <i class="ki-solid ki-picture fs-2 text-gray-400 me-n1"></i>
                       </a>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Banner</li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
-                    <li class="breadcrumb-item text-gray-700 fw-bold">View All Banners</li>
-                    <!--end::Item-->
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">View All Banners</li>
                   </ul>
                   <!--end::Breadcrumb-->
                   <!--begin::Title-->
-                  <h1 class="page-heading d-flex flex-column justify-content-center text-dark fw-bolder fs-1 lh-0">Banner List</h1>
+                  <h1 class="page-heading d-flex flex-column justify-content-start text-dark fw-bolder fs-1 lh-0 mt-1">Banner List</h1>
                   <!--end::Title-->
                 </div>
                 <!--end::Page title-->
@@ -77,11 +67,25 @@
             <!--end::Toolbar container-->
           </div>
           <!--end::Toolbar-->
+
           <!--begin::Content-->
           <div id="kt_app_content" class="app-content flex-column-fluid">
             <!--begin::Content container-->
             <div id="kt_app_content_container" class="app-container container-fluid">
-              <!--begin: intro-->
+
+              <!-- Image resolver + current admin helper -->
+              <%
+                function resolveImg(u) {
+                  const PLACEHOLDER = 'assets/media/svg/blank-image.svg';
+                  if (!u) return PLACEHOLDER;
+                  if (/^https?:\/\//i.test(u)) return u; // already absolute (Firebase)
+                  return (typeof IMAGE_URL !== 'undefined' ? (IMAGE_URL || '') : '') + u; // legacy relative
+                }
+                const currentAdmin = (loginData || []).find(a => String(a._id) === String(locals.admin && locals.admin._id));
+                const isSuperAdmin = currentAdmin && currentAdmin.isAdmin === 1;
+              %>
+
+              <!--begin: card-->
               <div class="card card-flush border">
                 <!--begin::Card header-->
                 <div class="card-header border-0 pt-6">
@@ -97,249 +101,238 @@
                     </div>
                     <!--end::Search-->
                   </div>
-                  <!--begin::Card title-->
+                  <!--end::Card title-->
+
                   <!--begin::Card toolbar-->
                   <div class="card-toolbar">
-                    <!--begin::Toolbar-->
                     <div class="d-flex justify-content-end" data-kt-subscription-table-toolbar="base">
-                      <!--begin::Add subscription-->
                       <a href="<%= process.env.BASE_URL %>add-banner" class="btn btn-primary">
-                        <i class="ki-duotone ki-plus fs-2"></i>Add Banner</a>
-                      <!--end::Add subscription-->
+                        <i class="ki-duotone ki-plus fs-2"></i>Add Banner
+                      </a>
                     </div>
-                    <!--end::Toolbar-->
                   </div>
                   <!--end::Card toolbar-->
                 </div>
                 <!--end::Card header-->
+
                 <!--begin::Card body-->
                 <div class="card-body py-4">
 
                   <!-- flash message -->
-                  <% if(flash.error.length> 0){ %>
-                  <!--begin::Alert-->
-                  <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-8">
-                    <!--begin::Content-->
-                    <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
-                    <!--end::Content-->
-                    <!--begin::Close-->
-                    <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
-                      <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
-                    </button>
-                    <!--end::Close-->
-                  </div>
-                  <!--end::Alert-->
+                  <% if (flash.error && flash.error.length > 0) { %>
+                    <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-8">
+                      <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
+                      <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                        <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                      </button>
+                    </div>
                   <% } %>
-                  <!-- complete flash message -->
 
                   <!--begin::Table-->
-                  <table class="table align-middle table-row-dashed fs-6 gy-5" id="kt_customers_table">
-                    <thead>
-                      <tr class="text-start text-gray-400 fw-bold fs-5 text-uppercase gs-0">
-                        <th class="min-w-70px">no</th>
-                        <th class=" min-w-125px">Image</th>
-                        <th class=" min-w-125px">Title</th>
-                        <th class=" min-w-125px">Campaign </th>
-                        <th class=" min-w-125px">Status</th>
-                        <th class=" min-w-125px">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody class="fw-semibold text-gray-600">
-                      <% if (banner.length > 0) { %>
-                      <% for (let i = 0; i < banner.length; i++) { %>
-                      <!-- begin::tr -->
-                      <tr>
-                        <td "><%= i+1 %></td>
-                        <td class=" pe-0">
-                          <!-- begin::Thumbnail -->
-                          <a href="<%= IMAGE_URL + banner[i].image %>" class=" symbol symbol-35px overflow-hidden me-3" data-fslightbox="lightbox-basic">
-                            <img src="<%=  IMAGE_URL + banner[i].image %>" alt="<%= banner[i].image %>" class="symbol-label border border-gray-400">
-                          </a>
-                          <!-- end::Thumbnail -->
-                        </td>
-                        <td class="text-dark fw-bold"><%= banner[i].title %> </td>
-                        <td class="text-dark fw-bold"> <%= banner[i].campaignId ? banner[i].campaignId.name : "N/A" %> </td>
-                        <% for(let j in loginData){ %>
-                          <% if(String(loginData[j]._id) === String(locals.admin._id)) {%>
-                          <% if(loginData[j].isAdmin === 1){ %>
-                          <td class="pe-0" data-bs-toggle="modal" data-bs-target="#kt_modal_change_status_banner<%= i %>">
-                            <% if (banner[i].status === "Publish") { %>
-                            <div class="badge badge-success">Publish</div>
-                            <% } else { %>
-                            <div class="badge badge-danger">UnPublish</div>
-                            <% } %>
-                          </td>
-                          <% } else if (loginData[j].isAdmin === 0){ %>
-                          <td class="pe-0" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>publish/unpubilsh intro</b>. As a <b>demo admin</b>, you can only view the content.">
-                            <% if (banner[i].status === "Publish") { %>
-                            <div class="badge badge-success">Publish</div>
-                            <% } else { %>
-                            <div class="badge badge-danger">UnPublish</div>
-                            <% } %>
-                          </td>
-                          <% } %>
-                          <% } %>
-                          <% } %>
-                          <td class="pe-0">
-                            <div class="d-flex align-items-center">
-                              <% for(let j in loginData){ %>
-                              <% if(String(loginData[j]._id) === String(locals.admin._id)) {%>
-                              <% if(loginData[j].isAdmin === 1){ %>
-                              <!-- edit -->
-                              <a href="<%= process.env.BASE_URL %>edit-banner?id=<%= banner[i]._id %>" class="menu-link">
-                                <div class="symbol symbol-40px symbol-circle user-select-none">
-                                  <div class="symbol-label bg-light-primary text-primary"><i class="ki-solid ki-pencil fs-2 text-primary"></i></div>
-                                </div>
-                              </a>
-                              <!-- delete -->
-                              <a data-bs-toggle="modal" data-bs-target="#kt_modal_delete_banner<%= i %>">
-                                <div class="symbol symbol-40px symbol-circle user-select-none">
-                                  <div class="symbol-label bg-light-danger text-danger"><i class="ki-solid ki-trash fs-2 text-danger"></i></div>
-                                </div>
-                              </a>
-                              <% } else if (loginData[j].isAdmin === 0){ %>
-                              <!-- edit -->
-                              <a data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>edit banner</b>. As a <b>demo admin</b>, you can only view the content.">
-                                <div class="symbol symbol-40px symbol-circle user-select-none">
-                                  <div class="symbol-label bg-light-primary text-primary"><i class="ki-solid ki-pencil fs-2 text-primary"></i></div>
-                                </div>
-                              </a>
-                              <!-- delete -->
-                              <a data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>delete banner</b>. As a <b>demo admin</b>, you can only view the content.">
-                                <div class="symbol symbol-40px symbol-circle user-select-none">
-                                  <div class="symbol-label bg-light-danger text-danger"><i class="ki-solid ki-trash fs-2 text-danger"></i></div>
-                                </div>
-                              </a>
-                              <% } %>
-                              <% } %>
-                              <% } %>
-                            </div>
-                          </td>
-                      </tr>
-                      <!-- end::tr -->
+                  <div class="table-responsive">
+                    <table class="table align-middle table-row-dashed fs-6 gy-5" id="kt_customers_table">
+                      <thead>
+                        <tr class="text-start text-gray-400 fw-bold fs-6 text-uppercase gs-0">
+                          <th class="min-w-70px">No</th>
+                          <th class="min-w-100px">Image</th>
+                          <th class="min-w-150px">Title</th>
+                          <th class="min-w-150px">Campaign</th>
+                          <th class="min-w-100px">Status</th>
+                          <th class="min-w-125px">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody class="fw-semibold text-gray-600">
+                        <% if (banner && banner.length) { %>
+                          <% for (let i = 0; i < banner.length; i++) { %>
+                            <tr>
+                              <td><%= i + 1 %></td>
+                              <td class="pe-0">
+                                <!-- Thumbnail -->
+                                <a href="<%= resolveImg(banner[i].image) %>" class="symbol symbol-35px overflow-hidden me-3" data-fslightbox="lightbox-banner">
+                                  <img
+                                    src="<%= resolveImg(banner[i].image) %>"
+                                    alt="<%= banner[i].title %>"
+                                    class="symbol-label border border-gray-400"
+                                    loading="lazy"
+                                    decoding="async"
+                                    onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';"
+                                  >
+                                </a>
+                              </td>
+                              <td class="text-dark fw-bold"><%= banner[i].title %></td>
+                              <td class="text-dark fw-bold"><%= banner[i].campaignId ? banner[i].campaignId.name : "N/A" %></td>
 
-                          <!-- begin::Modal - Enable/Disable  banner  -->
-                          <div class=" modal fade" id="kt_modal_change_status_banner<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                            <div class="modal-dialog" role="document">
-                              <div class="modal-content">
-                                <div class="modal-header">
-                                  <h5 class="modal-title fs-1" id="confirmLabel">Confirmation</h5>
-                                  <!--begin::Close-->
-                                  <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                    <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                  </div>
-                                  <!--end::Close-->
-                                </div>
-                                <!-- begin::modal-body -->
-                                <div class="modal-body">
-                                  <p class="message text-center fs-3 mb-0">
-                                    Are you sure..!! you want to <%= banner[i].status === "Publish" ? 'unpublish' : 'publish' %> the banner <b><%=  banner[i].title %></b> ...?
-                                  </p>
-                                </div>
-                                <!-- end::modal-body -->
-                                <!-- begin::modal-footer -->
-                                <div class="modal-footer">
-                                  <a href="<%= process.env.BASE_URL %>banner-status?id=<%=  banner[i]._id %>">
-                                    <button type="button" class="btn <%=  banner[i].status === "Publish" ? 'btn-danger' : 'btn-success' %>">
-                                      <%=  banner[i].status === "Publish" ? 'UnPublish' : 'Publish' %>
-                                    </button>
+                              <!-- Status -->
+                              <td class="pe-0">
+                                <% if (isSuperAdmin) { %>
+                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_change_status_banner_<%= i %>">
+                                    <% if (banner[i].status === "Publish") { %>
+                                      <div class="badge badge-success">Publish</div>
+                                    <% } else { %>
+                                      <div class="badge badge-danger">UnPublish</div>
+                                    <% } %>
                                   </a>
+                                <% } else { %>
+                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>publish/unpublish banner</b>. As a <b>demo admin</b>, you can only view the content.">
+                                    <% if (banner[i].status === "Publish") { %>
+                                      <div class="badge badge-success">Publish</div>
+                                    <% } else { %>
+                                      <div class="badge badge-danger">UnPublish</div>
+                                    <% } %>
+                                  </a>
+                                <% } %>
+                              </td>
+
+                              <!-- Actions -->
+                              <td class="pe-0">
+                                <div class="d-flex align-items-center">
+                                  <% if (isSuperAdmin) { %>
+                                    <!-- edit -->
+                                    <a href="<%= process.env.BASE_URL %>edit-banner?id=<%= banner[i]._id %>" class="menu-link me-2" title="Edit" data-bs-toggle="tooltip">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-primary text-primary">
+                                          <i class="ki-solid ki-pencil fs-2 text-primary"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                    <!-- delete -->
+                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_delete_banner_<%= i %>" title="Delete" data-bs-toggle="tooltip">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-danger text-danger">
+                                          <i class="ki-solid ki-trash fs-2 text-danger"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                  <% } else { %>
+                                    <!-- edit (no access) -->
+                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>edit banner</b>. As a <b>demo admin</b>, you can only view the content." class="me-2">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-primary text-primary">
+                                          <i class="ki-solid ki-pencil fs-2 text-primary"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                    <!-- delete (no access) -->
+                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>delete banner</b>. As a <b>demo admin</b>, you can only view the content.">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-danger text-danger">
+                                          <i class="ki-solid ki-trash fs-2 text-danger"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                  <% } %>
                                 </div>
-                                <!-- end::modal-footer -->
+                              </td>
+                            </tr>
+
+                            <!-- Modal: Change Status -->
+                            <div class="modal fade" id="kt_modal_change_status_banner_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                              <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title fs-1" id="confirmLabel">Confirmation</h5>
+                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                    </div>
+                                  </div>
+                                  <div class="modal-body">
+                                    <p class="message text-center fs-3 mb-0">
+                                      Are you sure you want to <%= banner[i].status === "Publish" ? "unpublish" : "publish" %> the banner <b><%= banner[i].title %></b>?
+                                    </p>
+                                  </div>
+                                  <div class="modal-footer">
+                                    <a href="<%= process.env.BASE_URL %>banner-status?id=<%= banner[i]._id %>">
+                                      <button type="button" class="btn <%= banner[i].status === "Publish" ? "btn-danger" : "btn-success" %>">
+                                        <%= banner[i].status === "Publish" ? "UnPublish" : "Publish" %>
+                                      </button>
+                                    </a>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                           </div>
-                           <!--end::Modal - Enable/Disable  banner -->
+                            <!-- /Modal: Change Status -->
 
-                      <!--begin::Modal - delete intro-->
-                      <div class="modal fade" id="kt_modal_delete_banner<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                        <!--begin::Modal-->
-                        <div class="modal-dialog">
-                          <div class="modal-content">
-                            <div class="modal-header">
-                              <h5 Delete class="modal-title fs-2">Delete Confirmation</h5>
-                              <!--begin::Close-->
-                              <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                            <!-- Modal: Delete -->
+                            <div class="modal fade" id="kt_modal_delete_banner_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                              <div class="modal-dialog">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title fs-2">Delete Confirmation</h5>
+                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                    </div>
+                                  </div>
+                                  <div class="modal-body">
+                                    <p class="text-center fs-3">
+                                      Are you sure you want to delete the banner <b><%= banner[i].title %></b>?
+                                    </p>
+                                  </div>
+                                  <div class="modal-footer">
+                                    <a href="<%= process.env.BASE_URL %>delete-banner?id=<%= banner[i]._id %>">
+                                      <button type="button" class="btn btn-danger">Delete</button>
+                                    </a>
+                                  </div>
+                                </div>
                               </div>
-                              <!--end::Close-->
                             </div>
-
-                            <div class="modal-body">
-                              <p class="text-center fs-3">Are you sure..!! you want to delete the banner <b> <%= banner[i].title %> </b> </p>
-                            </div>
-
-                            <div class="modal-footer">
-                              <a href="<%= process.env.BASE_URL %>delete-banner?id=<%= banner[i]._id %>"><button type="button" class="btn btn-danger">Delete</button></a>
-                            </div>
-                            </form>
-                          </div>
-                        </div>
-                      </div>
-                      <!--end::Modal - delete intro -->
-                      <% } %>
-                      <% } else { %>
-                      <!-- <p class="text-center fs-4">No slider record available.</p> -->
-                      <% } %>
-                    </tbody>
-                  </table>
+                            <!-- /Modal: Delete -->
+                          <% } %>
+                        <% } else { %>
+                          <tr>
+                            <td colspan="6" class="text-center py-10">
+                              <span class="text-gray-600">No banner records available.</span>
+                            </td>
+                          </tr>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
                   <!--end::Table-->
+
                 </div>
                 <!--end::Card body-->
               </div>
-              <!--end: intro-->
+              <!--end: card-->
+
             </div>
             <!--end::Content container-->
           </div>
           <!--end::Content-->
 
-              <!--begin::Modal - Not Authorized -->
-              <div class="modal fade" id="kt_modal_no_access" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                <!--begin::Modal-->
-                <div class="modal-dialog  modal-dialog-centered">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title fs-1">Not Authorized</h5>
-                      <!--begin::Close-->
-                      <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                      </div>
-                      <!--end::Close-->
-                    </div>
-    
-                    <!-- begin::modal-body -->
-                    <div class="modal-body">
-                      <p class="text-center fs-3 mb-0" id="modal-message"></p>
-                    </div>
-                    <!-- end:: modal-body -->
-    
-                    <!-- begin::modal-footer -->
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
-                    </div>
-                    <!-- end::modal-footer -->
-    
+          <!--begin::Modal - Not Authorized -->
+          <div class="modal fade" id="kt_modal_no_access" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title fs-1">Not Authorized</h5>
+                  <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
                   </div>
                 </div>
+                <div class="modal-body">
+                  <p class="text-center fs-3 mb-0" id="modal-message"></p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
+                </div>
               </div>
-              <!--end::Modal-->
+            </div>
+          </div>
+          <!--end::Modal-->
 
         </div>
         <!--end::Content wrapper-->
 
         <!--begin::Footer-->
         <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
-          <!--begin::Copyright-->
           <div class="text-dark order-2 order-md-1">
             <span class="text-muted fw-semibold me-1"></span>
-            <a href="#" target="_blank" class="text-gray-800 text-hover-primary">  </a>
+            <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
           </div>
-          <!--end::Copyright-->
         </div>
         <!--end::Footer-->
       </div>
       <!--end:::Main-->
-
 
     </div>
     <!--end::Wrapper-->
@@ -357,7 +350,6 @@
   </i>
 </div>
 <!--end::Scrolltop-->
-
 
 <!-- partial:partials/header -->
 <%- include('../layouts/footer.ejs') %>

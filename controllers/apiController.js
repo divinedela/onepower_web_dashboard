@@ -115,6 +115,44 @@ const signUp = async (req, res) => {
     }
 }
 
+const testOTP = async (req, res) => {
+    console.log("test otp");
+
+     const otp = otpGenerator.generate(4, {
+       upperCaseAlphabets: false,
+       specialChars: false,
+       lowerCaseAlphabets: false,
+     });
+
+    console.log("test otp : otp", otp);
+
+
+     try {
+        await sendOtpMail(
+           otp,
+           "divinedela.dev@gmail.com",
+           "divine",
+           "dela"
+         );
+
+                     return res.json({
+                       data: {
+                         success: 1,
+                         message:
+                           "Successfully signed up! Please check your email to verify OTP.",
+                         error: 0,
+                       },
+                     });
+        
+     } catch (error) {
+           console.log("Error during otp test", error.message);
+           return res.json({
+             data: { success: 0, message: "An error occurred", error: 1 },
+           });
+}
+     }
+
+
 //  verify otp
 const verifyOTP = async (req, res) => {
     try {
@@ -1348,7 +1386,8 @@ module.exports = {
     getPage,
     getCurrency,
     getOtp,
-    getForgotPasswordOtp
+    getForgotPasswordOtp,
+    testOTP
 
 }
 

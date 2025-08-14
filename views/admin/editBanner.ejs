@@ -41,39 +41,25 @@
                 <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
                   <!--begin::Breadcrumb-->
                   <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
                       <a href="#" class="text-gray-500">
                         <i class="ki-solid ki-picture fs-2 text-gray-400 me-n1"></i>
                       </a>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Banner</li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
                       <a href="<%= process.env.BASE_URL %>banner" class="text-gray-700 fw-bold text-hover-primary">View All Banners</a>
                     </li>
-                    <!--end::Item-->
-                     <!--begin::Item-->
-                     <li class="breadcrumb-item">
+                    <li class="breadcrumb-item">
                       <i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i>
                     </li>
-                    <!--end::Item-->
-                    <!--begin::Item-->
                     <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Edit Banner</li>
-                    <!--end::Item-->
                   </ul>
                   <!--end::Breadcrumb-->
                 </div>
@@ -90,18 +76,27 @@
             <!--begin::Content container-->
             <div id="kt_app_content_container" class="app-container container-fluid">
 
+              <!-- Helper to resolve image URL (Firebase absolute or legacy relative) -->
+              <%
+                function resolveImg(u) {
+                  const PLACEHOLDER = 'assets/media/svg/blank-image.svg';
+                  if (!u) return PLACEHOLDER;
+                  if (/^https?:\/\//i.test(u)) return u; // already absolute (Firebase URL)
+                  return (typeof IMAGE_URL !== 'undefined' ? (IMAGE_URL || '') : '') + u; // legacy relative
+                }
+              %>
+
               <!--begin::Row-->
               <div class="row g-5">
                 <div class="card mb-5 mb-xl-10">
                   <!--begin::Card header-->
                   <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
-                    <!--begin::Card title-->
                     <div class="card-title m-0">
                       <h3 class="fw-bold m-0 fs-1">Edit Banner</h3>
                     </div>
-                    <!--end::Card title-->
                   </div>
-                  <!--begin::Card header-->
+                  <!--end::Card header-->
+
                   <!--begin::Content-->
                   <div id="kt_account_settings_profile_details" class="collapse show">
 
@@ -111,88 +106,78 @@
                       <div class="card-body border-top ">
 
                         <!-- flash message -->
-                        <% if(flash.error.length> 0){ %>
-                        <!--begin::Alert-->
-                        <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
-                          <!--begin::Content-->
-                          <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
-                          <!--end::Content-->
-                          <!--begin::Close-->
-                          <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
-                            <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
-                          </button>
-                          <!--end::Close-->
-                        </div>
-                        <!--end::Alert-->
-                        <% } %>
-                        <!-- complete flash message -->
-
-                        <!--begin::Input group-->
-                        <input type="hidden" name="id" value="<%= banner._id %>">
-                        <!--end::Input group-->
-
-                         <!--begin::Input group-->
-                         <input type="hidden" name="oldImage" value="<%= banner.image %>">
-                         <!--end::Input group-->
-
-                        <!-- begin::Input group -->
-                        <div class="row mb-8">
-                          <!-- begin::Label -->
-                          <label class="col-lg-2 col-form-label fw-semibold fs-6 required">Image</label>
-                          <!-- end::Label -->
-                          <!-- begin::Col -->
-                          <div class="col-lg-10 fv-row fv-plugins-icon-container">
-                            <!-- begin::Image input -->
-                            <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
-                              <!-- begin::Preview existing avatar -->
-                              <img class="galleryimg image-input-wrapper w-150px h-150px" src="<%= IMAGE_URL + banner.image  %>" alt="<%= banner.image  %>" id="previewImage"></img>
-                              <!-- end::Preview existing avatar -->
-                              <!-- begin::Edit button -->
-                              <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow" data-kt-image-input-action="change" data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
-                                <i class="ki-duotone ki-pencil fs-2 text-primary">
-                                  <span class="path1"></span>
-                                  <span class="path2"></span>
-                                </i>
-                                <!-- begin::Inputs -->
-                                <input type="file" name="image" id="imageInput" accept=".png, .jpg, .jpeg" />
-                                <!-- end::Inputs -->
-                              </label>
-                              <!-- end::Edit button -->
-                            </div>
-                            <!-- end::Image input -->
-                            <!-- begin::Hint -->
-                            <div class="form-text">Allowed file types: png, jpg, jpeg.</div>
-                            <!-- end::Hint -->
+                        <% if (flash && flash.error && flash.error.length > 0) { %>
+                          <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
+                            <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
+                            <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                              <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                            </button>
                           </div>
-                          <!--  end::Col  -->
-                        </div>
-                        <!-- end::Input group -->
+                        <% } %>
 
-                        <!--begin::Input group-->
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="id" value="<%= banner._id %>">
+                        <input type="hidden" name="oldImage" value="<%= banner.image %>">
+
+                        <!-- Image -->
+                        <div class="row mb-8">
+                          <label class="col-lg-2 col-form-label fw-semibold fs-6 required">Image</label>
+                          <div class="col-lg-10 fv-row fv-plugins-icon-container">
+                            <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
+                              <!-- preview existing -->
+                              <img
+                                class="galleryimg image-input-wrapper w-150px h-150px"
+                                src="<%= resolveImg(banner.image) %>"
+                                alt="<%= banner.title %>"
+                                id="bannerImagePreview"
+                                onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';"
+                              />
+                              <!-- actions -->
+                              <div class="d-flex align-items-center gap-2 mt-3">
+                                <!-- Change -->
+                                <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow"
+                                       data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
+                                  <i class="ki-duotone ki-pencil fs-2 text-primary">
+                                    <span class="path1"></span>
+                                    <span class="path2"></span>
+                                  </i>
+                                  <input type="file" name="image" id="bannerImageInput" accept=".png,.jpg,.jpeg,.webp" hidden />
+                                </label>
+                                <!-- Clear selection (revert to old) -->
+                                <button type="button" class="btn btn-icon btn-circle btn-color-muted btn-active-color-danger w-30px h-30px bg-body shadow"
+                                        id="bannerImageClearBtn" data-bs-toggle="tooltip" title="Clear">
+                                  <i class="ki-duotone ki-cross fs-2 text-danger"><span class="path1"></span><span class="path2"></span></i>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="form-text">Allowed file types: png, jpg, jpeg, webp.</div>
+                          </div>
+                        </div>
+
+                        <!-- Title -->
                         <div class="row mb-8">
                           <label class="col-lg-2 col-form-label fw-semibold fs-6 required">Title</label>
                           <div class="col-lg-10 fv-row">
                             <input type="text" class="form-control form-control-lg" name="title" value="<%= banner.title %>" required />
                           </div>
                         </div>
-                        <!--end::Input group-->
 
-                        <!--begin::Input group-->
+                        <!-- Campaign -->
                         <div class="row">
                           <label class="col-lg-2 col-form-label fw-semibold fs-6 required">Campaign</label>
                           <div class="col-lg-10 fv-row">
-                            <select name="campaignId" class="form-select  form-control-lg" data-control="select2"  data-placeholder="Select Campaign" required>
+                            <select name="campaignId" class="form-select form-control-lg" data-control="select2" data-placeholder="Select Campaign" required>
                               <option></option>
-                              <%  campaignData.forEach((item)=>{%>
-                              <option value="<%= item._id %>" <% if(String(item._id) === String(banner.campaignId)) {%> selected <%} %>><%= item.name %></option>
-                              <%}) %>
+                              <% (campaignData || []).forEach(function(item){ %>
+                                <option value="<%= item._id %>" <%= (String(item._id) === String(banner.campaignId)) ? 'selected' : '' %>><%= item.name %></option>
+                              <% }); %>
                             </select>
                           </div>
                         </div>
-                        <!--end::Input group-->
 
                       </div>
                       <!--end::Card body-->
+
                       <!--begin::Actions-->
                       <div class="card-footer">
                         <button type="submit" class="btn btn-primary">Edit</button>
@@ -200,6 +185,7 @@
                       <!--end::Actions-->
                     </form>
                     <!--end::Form-->
+
                   </div>
                   <!--end::Content-->
                 </div>
@@ -212,17 +198,14 @@
 
           <!--begin::Footer-->
           <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
-            <!--begin::Copyright-->
             <div class="text-dark order-2 order-md-1">
               <span class="text-muted fw-semibold me-1"></span>
               <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
             </div>
-            <!--end::Copyright-->
           </div>
           <!--end::Footer-->
         </div>
         <!--end::Content wrapper-->
-
 
       </div>
       <!--end::Main-->
@@ -243,6 +226,35 @@
 </div>
 <!--end::Scrolltop-->
 
+<!-- Client-side preview/clear for new file selection -->
+<script>
+(function() {
+  const originalImg = "<%= resolveImg(banner.image) %>";
+  const input = document.getElementById('bannerImageInput');
+  const preview = document.getElementById('bannerImagePreview');
+  const clearBtn = document.getElementById('bannerImageClearBtn');
+  let objectUrl = null;
+
+  if (input) {
+    input.addEventListener('change', function() {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (this.files && this.files[0]) {
+        objectUrl = URL.createObjectURL(this.files[0]);
+        preview.src = objectUrl;
+      } else {
+        preview.src = originalImg || 'assets/media/svg/blank-image.svg';
+      }
+    });
+  }
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (input) input.value = '';
+      preview.src = originalImg || 'assets/media/svg/blank-image.svg';
+    });
+  }
+})();
+</script>
 
 <!-- partial:partials/header -->
 <%- include('../layouts/footer.ejs') %>
