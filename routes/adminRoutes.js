@@ -17,8 +17,8 @@ routes.use(express.static('public'));
 const { isLogin, isLogout } = require("../middleware/auth");
 
 // Importing middleware function to uploaded  file
-const { uploadImage } = require("../middleware/uploadSingleFile");
-const multiplefile = require("../middleware/uploadMultipleFile");
+const { uploadImage } = require("../middleware/upload.single.stream");
+const multiplefile = require("../middleware/upload.multiple.stream");
 
 // Import controllers
 const loginController = require("../controllers/loginController");

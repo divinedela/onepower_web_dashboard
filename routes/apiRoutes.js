@@ -7,7 +7,7 @@ const path = require("path");
 const routes = express();
 
 // Importing 
-const { uploadAvatar } = require("../middleware/uploadSingleFile");
+const { uploadAvatar } = require("../middleware/upload.single.stream");
 
 // Importing middleware functions for check user authentication
 const { checkAuthentication } = require("../middleware/checkAuthentication");
