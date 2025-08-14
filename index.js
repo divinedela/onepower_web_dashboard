@@ -1,4 +1,15 @@
 // Import required modules
+require("dotenv").config();
+require("newrelic");
+const {
+  requestId,
+  morganToWinston,
+  addNrContext,
+  logger,
+} = require("./middleware/requestLogger");
+
+
+
 const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
@@ -20,6 +31,9 @@ const flashmiddleware = require("./config/flash");
 // Create an express app
 const app = express();
 
+app.use(requestId);
+app.use(morganToWinston);
+app.use(addNrContext);
 // Configure session
 app.use(
   session({
@@ -58,6 +72,53 @@ app.use(process.env.BASE_URL, adminRoutes);
 //Routes for api
 const apiRoutes = require("./routes/apiRoutes.js");
 app.use("/api", apiRoutes);
+
+app.use((req, res) => {
+  logger.warn({ requestId: req.id, url: req.originalUrl }, "Route not found");
+  res.status(404).render("404");
+});
+
+// Central error handler
+app.use((err, req, res, next) => {
+  const newrelic = require("newrelic");
+  newrelic.noticeError(err, { requestId: req?.id, url: req?.originalUrl });
+  logger.error(
+    {
+      requestId: req?.id,
+      url: req?.originalUrl,
+      stack: err.stack,
+      message: err.message,
+    },
+    "Unhandled error"
+  );
+
+  if (req.xhr || req.originalUrl?.startsWith("/api")) {
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", requestId: req?.id });
+  } else {
+    req.flash("error", "Something went wrong. Please try again.");
+    res.redirect(process.env.BASE_URL || "/");
+  }
+});
+
+process.on("unhandledRejection", (reason) => {
+  const newrelic = require("newrelic");
+  newrelic.noticeError(
+    reason instanceof Error ? reason : new Error(String(reason))
+  );
+  logger.error({ reason }, "Unhandled Promise Rejection");
+});
+
+process.on("uncaughtException", (err) => {
+  const newrelic = require("newrelic");
+  newrelic.noticeError(err);
+  logger.error(
+    { stack: err.stack, message: err.message },
+    "Uncaught Exception"
+  );
+  // consider graceful shutdown in production
+});
 
 const port = process.env.PORT || 4000;
 

@@ -1,82 +1,90 @@
-// Importing required modules 
 const nodemailer = require("nodemailer");
 const path = require("path");
-
-// Importing models
+const logger = require("../config/logger");
+const newrelic = require("newrelic");
 const mailModel = require("../model/mailModel");
 
-// Function to send OTP verification email
 const sendOtpMail = async (otp, email, firstname, lastname) => {
-
-    try {
-
-        // Fetch Mail deatails
-        const SMTP = await mailModel.findOne();
-
-        if (!SMTP) {
-            throw new Error("Mail details not found");
-        }
-
-        // Mail transporter configuration
-        const transporter = nodemailer.createTransport({
-            host: SMTP.host,
-            port: SMTP.port,
-            secure: true,
-            requireTLS: true,
-            auth: {
-                user: SMTP.mail_username,
-                pass: SMTP.mail_password
-            }
-        });
-
-        const { default: hbs } = await import('nodemailer-express-handlebars');
-
-        // Path for mail templates
-        const templatesPath = path.resolve(__dirname, "../views/mail-templates/");
-
-        // Handlebars setup for nodemailer
-        const handlebarOptions = {
-            viewEngine: {
-                partialsDir: templatesPath,
-                defaultLayout: false,
-            },
-            viewPath: templatesPath,
-        };
-
-        transporter.use('compile', hbs(handlebarOptions));
-
-        // Validate input parameters
-        if (!otp || !email || !firstname || !lastname) {
-            throw new Error("Invalid input parameters");
-        }
-
-        const mailOptions = {
-            from: SMTP.senderEmail,
-            template: "otp",
-            to: email,
-            subject: 'OTP Verification',
-            context: {
-                OTP: otp,
-                email: email,
-                firstname: firstname,
-                lastname: lastname
-            }
-        };
-
-        // Sending the email
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.error("Failed to send mail:", error);
-            } else {
-                console.log("Email sent:", info.response);
-            }
-        });
-
-    } catch (error) {
-        console.error("Error sending OTP mail:", error.message);
-        throw error;
+  try {
+    const SMTP = await mailModel.findOne();
+    if (!SMTP) {
+      const e = new Error("Mail details not found");
+      newrelic.noticeError(e);
+      throw e;
     }
 
+    const SMTP_USERNAME = SMTP.mail_username;
+    const SMTP_HOSTNAME = SMTP.host;
+    const SMTP_SENDER_EMAIL = SMTP.senderEmail;
+
+    logger.info({
+      area: "mail",
+      action: "create_transporter",
+      host: SMTP_HOSTNAME,
+      port: SMTP.port,
+      user: SMTP_USERNAME,
+    });
+
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOSTNAME,
+      port: Number(SMTP.port),
+      secure: Number(SMTP.port) === 465,
+      requireTLS: Number(SMTP.port) !== 465,
+
+      auth: { user: SMTP_USERNAME, pass: SMTP.mail_password },
+    });
+
+    const { default: hbs } = await import("nodemailer-express-handlebars");
+    const templatesPath = path.resolve(__dirname, "../views/mail-templates/");
+    transporter.use(
+      "compile",
+      hbs({
+        viewEngine: { partialsDir: templatesPath, defaultLayout: false },
+        viewPath: templatesPath,
+      })
+    );
+
+    if (!otp || !email || !firstname || !lastname) {
+      const e = new Error("Invalid input parameters");
+      newrelic.noticeError(e, { email });
+      throw e;
+    }
+
+    // Record a custom event & attributes around the send
+    newrelic.recordCustomEvent("OtpMailAttempt", { email, hasOtp: !!otp });
+
+    const info = await transporter.sendMail({
+      from: SMTP_SENDER_EMAIL,
+      template: "otp",
+      to: email,
+      subject: "OTP Verification",
+      context: { OTP: otp, email, firstname, lastname },
+    });
+
+    logger.info({
+      area: "mail",
+      action: "sent",
+      to: email,
+      messageId: info.messageId,
+      response: info.response,
+    });
+    newrelic.recordCustomEvent("OtpMailSent", { email });
+
+    return info;
+  } catch (error) {
+    logger.error(
+      {
+        area: "mail",
+        action: "send_failed",
+        message: error.message,
+        stack: error.stack,
+        email,
+      },
+      "Error sending OTP mail"
+    );
+    newrelic.noticeError(error, { email });
+    throw error;
+  }
 };
 
 module.exports = sendOtpMail;
