@@ -760,7 +760,7 @@ const mostPopulatedCampaign = async (req, res) => {
                 { status: "Publish", campaign_status: { $in: ["Running"] } },
                 { status: 0, isApproved: 0, userId: 0, isUser: 0 }).populate("categoryId", "_id image name");
 
-            if (!campaignData.length) return res.json({ data: { success: 0, message: "any running campaign Not Found", campaigns: [], error: 1 } });
+            if (!campaignData.length) return res.json({ data: { success: 0, message: "no running project found", campaigns: [], error: 1 } });
 
             // combine campaign and donation
             const updatedCampaignData = await combineCampaignAndDonation(campaignData);
@@ -768,7 +768,7 @@ const mostPopulatedCampaign = async (req, res) => {
             // Sort updatedCampaignData in descending order based on  totalDonationAmount
             updatedCampaignData.sort((a, b) => b.totalDonationAmount - a.totalDonationAmount);
 
-            return res.json({ data: { success: 1, message: "running campaign Found", campaigns: updatedCampaignData, error: 0 } });
+            return res.json({ data: { success: 1, message: "running project not found", campaigns: updatedCampaignData, error: 0 } });
         });
     } catch (error) {
         console.log("Error during most populate campaign:", error.message);
@@ -786,7 +786,7 @@ const comingToEndCampaign = async (req, res) => {
                 { status: "Publish", campaign_status: { $in: ["Running"] } },
                 { status: 0, isApproved: 0, userId: 0, isUser: 0 }).populate("categoryId", "_id image name");
 
-            if (!campaignData.length) return res.json({ data: { success: 0, message: "any running campaign Not Found", campaigns: [], error: 1 } });
+            if (!campaignData.length) return res.json({ data: { success: 0, message: "no running project found", campaigns: [], error: 1 } });
 
             // combine campaign and donation
             const updatedCampaignData = await combineCampaignAndDonation(campaignData);
@@ -863,15 +863,15 @@ const getAllUpcomingCampaign = async (req, res) => {
             // fetch campaign
             const campaignData = await campaignModel.find({ status: "Publish", campaign_status: "Upcoming" }, { status: 0, isApproved: 0, userId: 0, isUser: 0 }).populate("categoryId", "_id image name");
 
-            if (!campaignData.length) return res.json({ data: { success: 0, message: "any upcoming campaign not found", campaigns: [], error: 1 } });
+            if (!campaignData.length) return res.json({ data: { success: 0, message: "no upcoming project found", campaigns: [], error: 1 } });
 
             // combine campaign and donation
             const updatedCampaignData = await combineCampaignAndDonation(campaignData);
 
-            return res.json({ data: { success: 1, message: "upcoming campaign found", campaigns: updatedCampaignData, error: 0 } });
+            return res.json({ data: { success: 1, message: "upcoming project found", campaigns: updatedCampaignData, error: 0 } });
         });
     } catch (error) {
-        console.log("Error during get all upcoming campaign:", error.message);
+        console.log("Error during get all upcoming projects:", error.message);
         return res.status(500).json({ data: { success: 0, message: "An error occurred", error: 1 } });
     }
 }
@@ -883,15 +883,15 @@ const getAllEndedCampaign = async (req, res) => {
             // fetch campaign
             const campaignData = await campaignModel.find({ status: "Publish", campaign_status: "Ended" }, { status: 0, isApproved: 0, userId: 0, isUser: 0 }).populate("categoryId", "_id image name");
 
-            if (!campaignData.length) return res.json({ data: { success: 0, message: "any ended campaign Not Found", campaigns: [], error: 1 } });
+            if (!campaignData.length) return res.json({ data: { success: 0, message: "no ended projects Found", campaigns: [], error: 1 } });
 
             // combine campaign and donation
             const updatedCampaignData = await combineCampaignAndDonation(campaignData);
 
-            return res.json({ data: { success: 1, message: "ended campaign Found", campaigns: updatedCampaignData, error: 0 } });
+            return res.json({ data: { success: 1, message: "ended projects Found", campaigns: updatedCampaignData, error: 0 } });
         });
     } catch (error) {
-        console.log("Error during get all ended campaign:", error.message);
+        console.log("Error during getting all ended projects:", error.message);
         return res.status(500).json({ data: { success: 0, message: "An error occurred", error: 1 } });
     }
 }
