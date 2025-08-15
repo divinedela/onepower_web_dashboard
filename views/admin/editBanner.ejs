@@ -166,7 +166,7 @@
                         <div class="row">
                           <label class="col-lg-2 col-form-label fw-semibold fs-6 required">Project</label>
                           <div class="col-lg-10 fv-row">
-                            <select name="campaignId" class="form-select form-control-lg" data-control="select2" data-placeholder="Select Campaign" required>
+                            <select name="campaignId" class="form-select form-control-lg" data-control="select2" data-placeholder="Select Project" required>
                               <option></option>
                               <% (campaignData || []).forEach(function(item){ %>
                                 <option value="<%= item._id %>" <%= (String(item._id) === String(banner.campaignId)) ? 'selected' : '' %>><%= item.name %></option>
