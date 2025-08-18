@@ -13,11 +13,10 @@ const bannerSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    campaignId: {
+    newsId: { 
         type: mongoose.Schema.Types.ObjectId,
-        ref: "campaign",
-        required: true
-    },
+         ref: 'news' 
+        },
     status: {
         type: String,
         enum: ["Publish", "UnPublish"],

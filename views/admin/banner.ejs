@@ -136,7 +136,7 @@
                           <th class="min-w-70px">No</th>
                           <th class="min-w-100px">Image</th>
                           <th class="min-w-150px">Title</th>
-                          <th class="min-w-150px">Project</th>
+                          <th class="min-w-150px">News Item</th>
                           <th class="min-w-100px">Status</th>
                           <th class="min-w-125px">Actions</th>
                         </tr>
@@ -160,7 +160,7 @@
                                 </a>
                               </td>
                               <td class="text-dark fw-bold"><%= banner[i].title %></td>
-                              <td class="text-dark fw-bold"><%= banner[i].campaignId ? banner[i].campaignId.name : "N/A" %></td>
+                              <td class="text-dark fw-bold"><%= banner[i].newsId ? (banner[i].newsId.title || banner[i].newsId.name) : "N/A" %></td>
 
                               <!-- Status -->
                               <td class="pe-0">

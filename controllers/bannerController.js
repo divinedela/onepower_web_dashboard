@@ -4,8 +4,9 @@
 //   req.file.path OR firebaseStorage.path // GCS object path (e.g., "uploads/123.webp")
 
 // Models
+
 const bannerModel = require("../model/bannerModel");
-const campaignModel = require("../model/campaignModel");
+const newsModel = require("../model/newsModel"); // ⬅️ switched from campaignModel
 const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
 
@@ -17,13 +18,11 @@ const storagePathFromUrl = (urlOrPath = "") => {
   try {
     if (!urlOrPath) return null;
     if (/^https?:\/\//i.test(urlOrPath)) {
-      // tokenized gs URL: .../o/<encodedPath>?alt=media&token=...
       const afterO = urlOrPath.split("/o/")[1];
       if (!afterO) return null;
       const encodedPath = afterO.split("?")[0];
       return decodeURIComponent(encodedPath);
     }
-    // already a storage path ("uploads/..")
     return urlOrPath;
   } catch {
     return null;
@@ -36,7 +35,7 @@ const deleteFromFirebaseByUrlOrPath = async (urlOrPath) => {
   try {
     await bucket.file(objPath).delete();
   } catch (e) {
-    // ignore if not found or transient error
+    // ignore
   }
 };
 
@@ -46,21 +45,17 @@ const cleanupUploadedReqFile = async (file) => {
   if (p) await deleteFromFirebaseByUrlOrPath(p);
 };
 
-// Robust getter to support .single('image') OR .fields([{name:'image'}])
+// Support .single('image') OR .fields([{name:'image'}])
 const getUploadedImageUrl = (req) =>
-  // multiple uploader path (preferred)
-  req.files?.image?.[0]?.publicUrl ||
-  // fallback if single uploader is ever used
-  req.file?.publicUrl ||
-  null;
+  req.files?.image?.[0]?.publicUrl || req.file?.publicUrl || null;
 
 // ---------------- Controllers ----------------
 
 // Load view for adding a Banner
 const loadAddBanner = async (req, res) => {
   try {
-    const campaignData = await campaignModel.find();
-    return res.render("addBanner", { campaignData });
+    const newsData = await newsModel.find();
+    return res.render("addBanner", { newsData }); // ⬅️ pass news
   } catch (error) {
     console.log(error.message);
     req.flash("error", "Failed to add banner");
@@ -80,14 +75,14 @@ const addBanner = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
-    const { title, campaignId } = req.body;
+    const { title, newsId } = req.body; // ⬅️ newsId instead of campaignId
     const imageUrl = getUploadedImageUrl(req);
     if (!imageUrl) {
       req.flash("error", "Please upload an image for the banner.");
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
-    await new bannerModel({ title, image: imageUrl, campaignId }).save();
+    await new bannerModel({ title, image: imageUrl, newsId }).save(); // ⬅️ save newsId
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
     console.log("addBanner error:", error.message);
@@ -100,15 +95,10 @@ const addBanner = async (req, res) => {
 const loadBanner = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
-      const banner = await bannerModel.find().populate("campaignId");
+      const banner = await bannerModel.find().populate("newsId"); // ⬅️ populate newsId
       const loginData = await adminLoginModel.find();
 
-      // IMAGE_URL left blank; views should resolve absolute Firebase URLs directly
-      return res.render("banner", {
-        banner,
-        loginData,
-        IMAGE_URL: "",
-      });
+      return res.render("banner", { banner, loginData, IMAGE_URL: "" });
     });
   } catch (error) {
     console.log(error.message);
@@ -121,14 +111,10 @@ const loadBanner = async (req, res) => {
 const loadEditBanner = async (req, res) => {
   try {
     const id = req.query.id;
-    const campaignData = await campaignModel.find();
+    const newsData = await newsModel.find(); // ⬅️ list of news
     const banner = await bannerModel.findById(id);
 
-    return res.render("editBanner", {
-      banner,
-      IMAGE_URL: "",
-      campaignData,
-    });
+    return res.render("editBanner", { banner, IMAGE_URL: "", newsData });
   } catch (error) {
     console.log(error.message);
     req.flash("error", "Failed to load banner");
@@ -140,20 +126,18 @@ const loadEditBanner = async (req, res) => {
 const editBanner = async (req, res) => {
   const id = req.body.id;
   try {
-    const { title, campaignId, oldImage } = req.body;
-
-    // if a new file was uploaded via multiple middleware
+    const { title, newsId, oldImage } = req.body; // ⬅️ newsId
     const newUrl = getUploadedImageUrl(req);
     let image = oldImage;
 
     if (newUrl) {
-      await deleteFromFirebaseByUrlOrPath(oldImage); // cleanup old
+      await deleteFromFirebaseByUrlOrPath(oldImage);
       image = newUrl;
     }
 
     await bannerModel.findOneAndUpdate(
       { _id: id },
-      { $set: { title, image, campaignId } },
+      { $set: { title, image, newsId } }, // ⬅️ set newsId
       { new: true }
     );
 

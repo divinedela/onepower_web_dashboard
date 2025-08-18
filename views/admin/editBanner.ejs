@@ -162,14 +162,14 @@
                           </div>
                         </div>
 
-                        <!-- Campaign -->
+                        <!-- News -->
                         <div class="row">
-                          <label class="col-lg-2 col-form-label fw-semibold fs-6 required">Project</label>
+                          <label class="col-lg-2 col-form-label fw-semibold fs-6 required">News</label>
                           <div class="col-lg-10 fv-row">
-                            <select name="campaignId" class="form-select form-control-lg" data-control="select2" data-placeholder="Select Project" required>
+                            <select name="newsId" class="form-select form-control-lg" data-control="select2" data-placeholder="Select News" required>
                               <option></option>
-                              <% (campaignData || []).forEach(function(item){ %>
-                                <option value="<%= item._id %>" <%= (String(item._id) === String(banner.campaignId)) ? 'selected' : '' %>><%= item.name %></option>
+                              <% (newsData || []).forEach(function(item){ %>
+                                <option value="<%= item._id %>" <%= (String(item._id) === String(banner.newsId)) ? 'selected' : '' %>><%= item.title || item.name %></option>
                               <% }); %>
                             </select>
                           </div>
