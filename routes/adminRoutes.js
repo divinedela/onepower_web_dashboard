@@ -1,17 +1,17 @@
-// Importing required modules 
+// Importing required modules
 const express = require("express");
 
 // Create an instance of the express router
 const routes = express();
 
 // Configure EJS as the templating engine
-routes.set('view engine', 'ejs');
+routes.set("view engine", "ejs");
 
 // Configure the views directory for "static-files"
-routes.set('views', './views/admin');
+routes.set("views", "./views/admin");
 
 // Configure static files
-routes.use(express.static('public'));
+routes.use(express.static("public"));
 
 // Importing middleware functions for admin authentication
 const { isLogin, isLogout } = require("../middleware/auth");
@@ -26,6 +26,7 @@ const introController = require("../controllers/introController");
 const categoryController = require("../controllers/categoryController");
 const bannerController = require("../controllers/bannerController");
 const campaignController = require("../controllers/campaignController");
+const newsController = require("../controllers/newsController");
 const userController = require("../controllers/userController");
 const paymentController = require("../controllers/paymentController");
 const pageController = require("../controllers/pageController");
@@ -98,6 +99,23 @@ routes.get("/delete-banner", isLogin, bannerController.deleteBanner);
 
 routes.get("/banner-status", bannerController.updateBannerStatus);
 
+//Routes for News
+routes.get("/add-news", isLogin, newsController.loadAddNews);
+
+routes.post("/add-news", multiplefile, newsController.addNews);
+
+routes.get("/news", isLogin, newsController.loadNews);
+
+// routes.get("/news-info", isLogin, newsController.loadNewsInfo);
+
+routes.get("/edit-news", isLogin, newsController.loadEditNews);
+
+routes.post("/edit-news", multiplefile, newsController.editNews);
+
+routes.get("/delete-news", isLogin, newsController.deleteNews);
+
+routes.get("/news-status", newsController.updateNewsStatus);
+
 //Routes For Campaign
 routes.get("/add-campaign", isLogin, campaignController.loadAddCampaign);
 
@@ -142,18 +160,35 @@ routes.get("/notification", isLogin, notificationController.loadNotification);
 
 routes.get("/get-notification", notificationController.notification);
 
-routes.get("/push-notification", isLogin, notificationController.loadSendNotification);
+routes.get(
+  "/push-notification",
+  isLogin,
+  notificationController.loadSendNotification
+);
 
-routes.post("/push-notification", isLogin, notificationController.sendAllUserNotification);
+routes.post(
+  "/push-notification",
+  isLogin,
+  notificationController.sendAllUserNotification
+);
 
 // Routes For Payment Gateway
 routes.get("/payment-gateway", isLogin, paymentController.loadPaymentGateway);
 
-routes.post("/edit-stripe-payment-method", paymentController.editStripePaymentMethod);
+routes.post(
+  "/edit-stripe-payment-method",
+  paymentController.editStripePaymentMethod
+);
 
-routes.post("/edit-paypal-payment-method", paymentController.editPaypalPaymentMethod);
+routes.post(
+  "/edit-paypal-payment-method",
+  paymentController.editPaypalPaymentMethod
+);
 
-routes.post("/edit-razorpay-payment-method", paymentController.editRazorpayPaymentMethod);
+routes.post(
+  "/edit-razorpay-payment-method",
+  paymentController.editRazorpayPaymentMethod
+);
 
 routes.get("/active-user", isLogin, userController.isActivate);
 
@@ -162,7 +197,11 @@ routes.get("/private-policy", isLogin, pageController.loadPrivatePolicy);
 
 routes.post("/add-private-policy", pageController.addPrivatePolicy);
 
-routes.get("/terms-and-condition", isLogin, pageController.loadTermsAndCondition);
+routes.get(
+  "/terms-and-condition",
+  isLogin,
+  pageController.loadTermsAndCondition
+);
 
 routes.post("/add-terms-and-condition", pageController.addTermsAndCondition);
 
@@ -197,9 +236,8 @@ routes.post("/verification", verificationController.keyVerification);
 
 routes.post("/revoke", verificationController.revokeKey);
 
-
 routes.get("*", async (req, res) => {
-    res.redirect('/')
-})
+  res.redirect("/");
+});
 
 module.exports = routes;

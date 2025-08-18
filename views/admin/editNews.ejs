@@ -1,0 +1,186 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <%- include('../layouts/navbar.ejs') %>
+      <div class="app-header-separator"></div>
+    </div>
+
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <div id="kt_app_sidebar" class="app-sidebar flex-column"
+           data-kt-drawer="true" data-kt-drawer-name="app-sidebar"
+           data-kt-drawer-activate="{default: true, lg: false}"
+           data-kt-drawer-overlay="true" data-kt-drawer-width="250px"
+           data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <%- include('../layouts/sidebar.ejs') %>
+      </div>
+
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <div class="d-flex flex-column flex-column-fluid">
+
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a href="#" class="text-gray-500"><i class="ki-solid ki-document fs-2x text-gray-400 me-n1"></i></a>
+                    </li>
+                    <li class="breadcrumb-item"><i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i></li>
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a href="<%= process.env.BASE_URL %>news" class="text-gray-700 text-hover-primary">View All News</a>
+                    </li>
+                    <li class="breadcrumb-item"><i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i></li>
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Edit News</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="kt_app_content" class="app-content flex-column-fluid pt-0">
+            <div id="kt_app_content_container" class="app-container container-fluid">
+
+              <%
+                function resolveImg(u) {
+                  const PLACEHOLDER = 'assets/media/svg/blank-image.svg';
+                  if (!u) return PLACEHOLDER;
+                  if (/^https?:\/\//i.test(u)) return u;
+                  return (typeof IMAGE_URL !== 'undefined' ? (IMAGE_URL || '') : '') + u;
+                }
+              %>
+
+              <div class="row g-5">
+                <div class="card mb-5 mb-xl-10">
+                  <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse" data-bs-target="#kt_account_profile_details" aria-expanded="true">
+                    <div class="card-title m-0">
+                      <h3 class="fw-bold m-0 fs-1">Edit News</h3>
+                    </div>
+                  </div>
+
+                  <div id="kt_account_settings_profile_details" class="collapse show">
+                    <form class="form" method="post" enctype="multipart/form-data">
+                      <div class="card-body border-top">
+
+                        <% if (flash && flash.error && flash.error.length > 0) { %>
+                        <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-10">
+                          <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
+                          <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                            <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                          </button>
+                        </div>
+                        <% } %>
+
+                        <!-- Hidden -->
+                        <input type="hidden" name="id" value="<%= news._id %>">
+                        <input type="hidden" name="oldImage" value="<%= news.image %>">
+
+                        <!-- Image -->
+                        <div class="row mb-8">
+                          <label class="form-label required fw-semibold fs-6">Image</label>
+                          <div class="col-lg-9 fv-row fv-plugins-icon-container">
+                            <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
+                              <img class="galleryimg image-input-wrapper w-150px h-150px"
+                                   src="<%= resolveImg(news.image) %>"
+                                   alt="<%= news.title %>"
+                                   id="newsImagePreview"
+                                   onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';" />
+                              <div class="d-flex align-items-center gap-2 mt-3">
+                                <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow"
+                                       data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
+                                  <i class="ki-duotone ki-pencil fs-2 text-primary"><span class="path1"></span><span class="path2"></span></i>
+                                  <input type="file" name="image" id="newsImageInput" accept=".png,.jpg,.jpeg,.webp" hidden />
+                                </label>
+                                <button type="button" class="btn btn-icon btn-circle btn-color-muted btn-active-color-danger w-30px h-30px bg-body shadow"
+                                        id="newsImageClearBtn" data-bs-toggle="tooltip" title="Clear">
+                                  <i class="ki-duotone ki-cross fs-2 text-danger"><span class="path1"></span><span class="path2"></span></i>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="form-text">Allowed file types: png, jpg, jpeg, webp.</div>
+                          </div>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="row mb-10">
+                          <div class="col-sm-12">
+                            <label class="form-label required">Title</label>
+                            <input type="text" class="form-control form-control-lg" name="title" placeholder="Enter title" value="<%= news.title %>" required />
+                          </div>
+                        </div>
+
+                        <!-- Description (CKEditor-like textarea snippet) -->
+                        <div class="row">
+                          <label class="form-label required">Description</label>
+                          <div class="col-sm-12">
+                            <div class="mb-10">
+                              <textarea name="description" id="kt_docs_second_ckeditor_classic" class="form-control editor-height" placeholder="Enter news content"><%- news ? news.description : "" %></textarea>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+
+                      <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">Edit</button>
+                      </div>
+                    </form>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+            <div class="text-dark order-2 order-md-1">
+              <span class="text-muted fw-semibold me-1"></span>
+              <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+  <i class="ki-duotone ki-arrow-up"><span class="path1"></span><span class="path2"></span></i>
+</div>
+
+<script>
+(function() {
+  const originalImg = "<%= resolveImg(news.image) %>";
+  const input = document.getElementById('newsImageInput');
+  const preview = document.getElementById('newsImagePreview');
+  const clearBtn = document.getElementById('newsImageClearBtn');
+  let objectUrl = null;
+
+  if (input) {
+    input.addEventListener('change', function() {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (this.files && this.files[0]) {
+        objectUrl = URL.createObjectURL(this.files[0]);
+        preview.src = objectUrl;
+      } else {
+        preview.src = originalImg || 'assets/media/svg/blank-image.svg';
+      }
+    });
+  }
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (input) input.value = '';
+      preview.src = originalImg || 'assets/media/svg/blank-image.svg';
+    });
+  }
+})();
+</script>
+
+<!-- partial:partials/header -->
+<%- include('../layouts/footer.ejs') %>
