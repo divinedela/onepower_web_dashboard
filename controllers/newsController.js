@@ -4,14 +4,14 @@
 //   req.files[field][i].path       // GCS object path (e.g., "uploads/123.webp")
 // Or single-file variant: req.file.publicUrl
 
-const newsModel = require("../model/newsModel");
+const bannerModel = require("../model/bannerModel");
 const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
 
 // Firebase bucket (for deletes)
 const { bucket } = require("../config/firebaseAdmin");
 
-// ---------------- helpers: delete + cleanup ----------------
+// ---------------- helpers: delete + cleanup ----
 const storagePathFromUrl = (urlOrPath = "") => {
   try {
     if (!urlOrPath) return null;
@@ -51,13 +51,10 @@ const cleanupUploadedReqFiles = async (files) => {
   await Promise.allSettled(jobs);
 };
 
-// robust getter (multi or single upload middleware)
 const getUploadedImageUrl = (req) =>
   req.files?.image?.[0]?.publicUrl || req.file?.publicUrl || null;
 
-// ---------------- Controllers ----------------
-
-// Load list
+// -------- controllers ----------
 const loadNews = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
@@ -72,7 +69,6 @@ const loadNews = async (req, res) => {
   }
 };
 
-// Add (view)
 const loadAddNews = async (_req, res) => {
   try {
     return res.render("addNews");
@@ -83,12 +79,9 @@ const loadAddNews = async (_req, res) => {
   }
 };
 
-// Add (submit)
 const addNews = async (req, res) => {
   try {
     const loginData = await adminLoginModel.findById(req.session.userId);
-
-    // Demo admin guard
     if (loginData && loginData.isAdmin === 0) {
       await cleanupUploadedReqFiles(req.files);
       req.flash(
@@ -125,7 +118,6 @@ const addNews = async (req, res) => {
   }
 };
 
-// Edit (view)
 const loadEditNews = async (req, res) => {
   try {
     const id = req.query.id;
@@ -142,13 +134,11 @@ const loadEditNews = async (req, res) => {
   }
 };
 
-// Edit (submit)
 const editNews = async (req, res) => {
   const id = req.body.id;
   try {
     const { title, oldImage } = req.body;
     const description = (req.body.description || "").replace(/"/g, "&quot;");
-
     if (!title || !description) {
       req.flash("error", "Please provide title and description.");
       return res.redirect(process.env.BASE_URL + "edit-news?id=" + id);
@@ -156,9 +146,8 @@ const editNews = async (req, res) => {
 
     const newUrl = getUploadedImageUrl(req);
     let image = oldImage;
-
     if (newUrl) {
-      await deleteFromFirebaseByUrlOrPath(oldImage); // replace image in storage
+      await deleteFromFirebaseByUrlOrPath(oldImage);
       image = newUrl;
     }
 
@@ -176,7 +165,6 @@ const editNews = async (req, res) => {
   }
 };
 
-// Delete
 const deleteNews = async (req, res) => {
   try {
     const id = req.query.id;
@@ -186,6 +174,10 @@ const deleteNews = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "news");
     }
     if (doc.image) await deleteFromFirebaseByUrlOrPath(doc.image);
+
+    // detach any banners pointing to this news (optional: or delete banners)
+    await bannerModel.updateMany({ newsId: id }, { $unset: { newsId: "" } });
+
     await newsModel.deleteOne({ _id: id });
     return res.redirect(process.env.BASE_URL + "news");
   } catch (error) {
@@ -195,7 +187,6 @@ const deleteNews = async (req, res) => {
   }
 };
 
-// Toggle status
 const updateNewsStatus = async (req, res) => {
   try {
     const id = req.query.id;

@@ -3,24 +3,9 @@ const mongoose = require("mongoose");
 
 const newsSchema = new mongoose.Schema(
   {
-    // Main image (Firebase public URL)
-    image: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
-    // Core content
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    description: {
-      type: String, // HTML or plain text
-      required: true,
-      trim: true,
-    },
+    image: { type: String, required: true, trim: true }, // Firebase public URL
+    title: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true }, // HTML or plain text
 
     // Meta
     status: {
@@ -29,19 +14,12 @@ const newsSchema = new mongoose.Schema(
       default: "Publish",
       trim: true,
     },
-    publishedAt: {
-      type: Date,
-    },
+    publishedAt: { type: Date },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 // Simple text index for quick search
-newsSchema.index({
-  title: "text",
-  description: "text",
-});
+newsSchema.index({ title: "text", description: "text" });
 
 module.exports = mongoose.model("news", newsSchema);

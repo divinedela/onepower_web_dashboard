@@ -6,14 +6,14 @@
 // Models
 
 const bannerModel = require("../model/bannerModel");
-const newsModel = require("../model/newsModel"); // ⬅️ switched from campaignModel
+const newsModel = require("../model/newsModel");
 const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
 
 // Firebase bucket (for deletes)
 const { bucket } = require("../config/firebaseAdmin");
 
-// ---------------- helpers: delete + cleanup ----------------
+// ---------------- helpers: delete + cleanup -------
 const storagePathFromUrl = (urlOrPath = "") => {
   try {
     if (!urlOrPath) return null;
@@ -54,8 +54,8 @@ const getUploadedImageUrl = (req) =>
 // Load view for adding a Banner
 const loadAddBanner = async (req, res) => {
   try {
-    const newsData = await newsModel.find();
-    return res.render("addBanner", { newsData }); // ⬅️ pass news
+    const newsData = await newsModel.find().sort({ createdAt: -1 });
+    return res.render("addBanner", { newsData });
   } catch (error) {
     console.log(error.message);
     req.flash("error", "Failed to add banner");
@@ -75,14 +75,22 @@ const addBanner = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
-    const { title, newsId } = req.body; // ⬅️ newsId instead of campaignId
+    const { title, newsId } = req.body;
     const imageUrl = getUploadedImageUrl(req);
-    if (!imageUrl) {
-      req.flash("error", "Please upload an image for the banner.");
+
+    if (!title || !newsId || !imageUrl) {
+      req.flash("error", "Please select news, title and upload an image.");
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
-    await new bannerModel({ title, image: imageUrl, newsId }).save(); // ⬅️ save newsId
+    // validate news exists
+    const news = await newsModel.findById(newsId);
+    if (!news) {
+      req.flash("error", "Selected news not found.");
+      return res.redirect(process.env.BASE_URL + "add-banner");
+    }
+
+    await new bannerModel({ title, image: imageUrl, newsId }).save();
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
     console.log("addBanner error:", error.message);
@@ -95,7 +103,7 @@ const addBanner = async (req, res) => {
 const loadBanner = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
-      const banner = await bannerModel.find().populate("newsId"); // ⬅️ populate newsId
+      const banner = await bannerModel.find().populate("newsId");
       const loginData = await adminLoginModel.find();
 
       return res.render("banner", { banner, loginData, IMAGE_URL: "" });
@@ -111,7 +119,7 @@ const loadBanner = async (req, res) => {
 const loadEditBanner = async (req, res) => {
   try {
     const id = req.query.id;
-    const newsData = await newsModel.find(); // ⬅️ list of news
+    const newsData = await newsModel.find().sort({ createdAt: -1 });
     const banner = await bannerModel.findById(id);
 
     return res.render("editBanner", { banner, IMAGE_URL: "", newsData });
@@ -126,9 +134,21 @@ const loadEditBanner = async (req, res) => {
 const editBanner = async (req, res) => {
   const id = req.body.id;
   try {
-    const { title, newsId, oldImage } = req.body; // ⬅️ newsId
+    const { title, newsId, oldImage } = req.body;
     const newUrl = getUploadedImageUrl(req);
     let image = oldImage;
+
+    if (!title || !newsId) {
+      req.flash("error", "Please select news and enter a title.");
+      return res.redirect(process.env.BASE_URL + "edit-banner?id=" + id);
+    }
+
+    // validate news exists
+    const news = await newsModel.findById(newsId);
+    if (!news) {
+      req.flash("error", "Selected news not found.");
+      return res.redirect(process.env.BASE_URL + "edit-banner?id=" + id);
+    }
 
     if (newUrl) {
       await deleteFromFirebaseByUrlOrPath(oldImage);
@@ -137,7 +157,7 @@ const editBanner = async (req, res) => {
 
     await bannerModel.findOneAndUpdate(
       { _id: id },
-      { $set: { title, image, newsId } }, // ⬅️ set newsId
+      { $set: { title, image, newsId } },
       { new: true }
     );
 
@@ -154,12 +174,8 @@ const deleteBanner = async (req, res) => {
   try {
     const id = req.query.id;
     const doc = await bannerModel.findById(id);
-
-    if (doc?.image) {
-      await deleteFromFirebaseByUrlOrPath(doc.image);
-    }
+    if (doc?.image) await deleteFromFirebaseByUrlOrPath(doc.image);
     await bannerModel.deleteOne({ _id: id });
-
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
     console.log(error.message);
@@ -183,11 +199,7 @@ const updateBannerStatus = async (req, res) => {
         {
           $set: {
             status: {
-              $cond: {
-                if: { $eq: ["$status", "Publish"] },
-                then: "UnPublish",
-                else: "Publish",
-              },
+              $cond: [{ $eq: ["$status", "Publish"] }, "UnPublish", "Publish"],
             },
           },
         },
@@ -203,6 +215,50 @@ const updateBannerStatus = async (req, res) => {
   }
 };
 
+// ------- PUBLIC API (for Flutter) -------
+const getAllBannerPublic = async (_req, res) => {
+  try {
+    const banners = await bannerModel
+      .find({ status: "Publish" }, { status: 0 }) // exclude status from docs (optional)
+      .populate({
+        path: "newsId",
+        select: "_id image title description publishedAt status",
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // keep only banners with a valid, published news
+    const filtered = banners.filter(
+      (b) => b.newsId && b.newsId.status === "Publish"
+    );
+
+    // optional: trim heavy description for the list payload
+    const trimmed = filtered.map((b) => ({
+      ...b,
+      newsId: {
+        ...b.newsId,
+        description:
+          typeof b.newsId.description === "string"
+            ? b.newsId.description.slice(0, 600) // keep first ~600 chars
+            : b.newsId.description,
+      },
+    }));
+
+    return res.json({
+      data: {
+        success: 1,
+        banner: trimmed,
+        message: "Banner list fetched successfully",
+      },
+    });
+  } catch (err) {
+    console.error("getAllBannerPublic error:", err);
+    return res.status(500).json({
+      data: { success: 2, message: err.message || "Something went wrong" },
+    });
+  }
+};
+
 module.exports = {
   loadAddBanner,
   addBanner,
@@ -211,4 +267,5 @@ module.exports = {
   editBanner,
   deleteBanner,
   updateBannerStatus,
+  getAllBannerPublic,
 };
