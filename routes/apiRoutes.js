@@ -106,4 +106,7 @@ routes.post("/getOtp", apiController.getOtp);
 // Routes For Get Forgot Password OTP
 routes.post("/getForgotPasswordOtp", apiController.getForgotPasswordOtp);
 
+routes.post("/getAllNews", controller.getAllNews);
+routes.post("/getNewsById", controller.getNewsById);
+
 module.exports = routes;

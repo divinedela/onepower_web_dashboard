@@ -2066,6 +2066,122 @@ const getForgotPasswordOtp = async (req, res) => {
   }
 };
 
+
+const getAllNews = async (req, res) => {
+  try {
+    await verifyAccess(req, res, async () => {
+      // Optional: simple pagination (defaults)
+      const page = Math.max(parseInt(req.body.page ?? 1, 10), 1);
+      const limit = Math.min(
+        Math.max(parseInt(req.body.limit ?? 50, 10), 1),
+        100
+      );
+      const skip = (page - 1) * limit;
+
+      // Fetch only Published news, newest first
+      const [items, total] = await Promise.all([
+        newsModel
+          .find(
+            { status: "Publish" },
+            { image: 1, title: 1, description: 1, publishedAt: 1, status: 1 }
+          )
+          .sort({ publishedAt: -1, createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        newsModel.countDocuments({ status: "Publish" }),
+      ]);
+
+      if (!items.length) {
+        return res.json({
+          data: {
+            success: 0,
+            message: "News Not Found",
+            news: [],
+            page,
+            limit,
+            total,
+            error: 1,
+          },
+        });
+      }
+
+      // (Optional) trim overly long HTML to avoid huge payloads
+      const trimmed = items.map((n) => ({
+        ...n,
+        description:
+          typeof n.description === "string"
+            ? n.description.slice(0, 20000) // keep rich HTML; just prevent absurdly large docs
+            : n.description,
+      }));
+
+      return res.json({
+        data: {
+          success: 1,
+          message: "News Found",
+          news: trimmed,
+          page,
+          limit,
+          total,
+          error: 0,
+        },
+      });
+    });
+  } catch (error) {
+    console.log("Error during get all news", error.message);
+    return res.status(500).json({
+      data: { success: 0, message: "An error occurred", error: 1 },
+    });
+  }
+};
+
+// GET NEWS BY ID (Published only)
+const getNewsById = async (req, res) => {
+  try {
+    await verifyAccess(req, res, async () => {
+      const { newsId } = req.body;
+
+      if (!newsId) {
+        return res.json({
+          data: { success: 0, message: "newsId is required", error: 1 },
+        });
+      }
+
+      const item = await newsModel
+        .findOne(
+          { _id: newsId, status: "Publish" },
+          { image: 1, title: 1, description: 1, publishedAt: 1, status: 1 }
+        )
+        .lean();
+
+      if (!item) {
+        return res.json({
+          data: {
+            success: 0,
+            message: "News Not Found",
+            news: null,
+            error: 1,
+          },
+        });
+      }
+
+      return res.json({
+        data: {
+          success: 1,
+          message: "News Found",
+          news: item,
+          error: 0,
+        },
+      });
+    });
+  } catch (error) {
+    console.log("Error during get news by id", error.message);
+    return res.status(500).json({
+      data: { success: 0, message: "An error occurred", error: 1 },
+    });
+  }
+};
+
 module.exports = {
   checkRegisterUser,
   signUp,
@@ -2104,4 +2220,6 @@ module.exports = {
   getOtp,
   getForgotPasswordOtp,
   testOTP,
+  getAllNews,
+  getNewsById,
 };
