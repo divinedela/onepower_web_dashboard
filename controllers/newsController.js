@@ -7,6 +7,7 @@
 const bannerModel = require("../model/bannerModel");
 const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
+const newsModel = require("../model/newsModel");
 
 // Firebase bucket (for deletes)
 const { bucket } = require("../config/firebaseAdmin");
