@@ -173,22 +173,19 @@ routes.post(
 );
 
 // Routes For Payment Gateway
-routes.get("/payment-gateway", isLogin, paymentController.loadPaymentGateway);
+// routes.get("/payment-gateway", isLogin, paymentController.loadPaymentGateway);
 
-routes.post(
-  "/edit-stripe-payment-method",
-  paymentController.editStripePaymentMethod
-);
 
-routes.post(
-  "/edit-paypal-payment-method",
-  paymentController.editPaypalPaymentMethod
-);
 
-routes.post(
-  "/edit-razorpay-payment-method",
-  paymentController.editRazorpayPaymentMethod
-);
+// routes.post(
+//   "/edit-paypal-payment-method",
+//   paymentController.editPaypalPaymentMethod
+// );
+
+// routes.post(
+//   "/edit-razorpay-payment-method",
+//   paymentController.editRazorpayPaymentMethod
+// );
 
 routes.get("/active-user", isLogin, userController.isActivate);
 
