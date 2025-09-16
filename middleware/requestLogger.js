@@ -1,8 +1,10 @@
+// middleware/requestLogger.js
 const newrelic = require("newrelic");
 const logger = require("../config/logger");
 const { v4: uuidv4 } = require("uuid");
 const morgan = require("morgan");
 
+/** Attach a stable request ID */
 function requestId(req, res, next) {
   const id = req.headers["x-request-id"] || uuidv4();
   req.id = id;
@@ -11,41 +13,50 @@ function requestId(req, res, next) {
   next();
 }
 
-// Send Apache-combined line into Winston (then to stdout -> New Relic)
+/** Morgan → Winston bridge (string message + structured meta) */
 const morganToWinston = morgan("combined", {
-  stream: { write: (line) => logger.info({ type: "http", line: line.trim() }) },
+  stream: {
+    write: (line) =>
+      logger.info("http_access", {
+        type: "http",
+        line: line.trim(),
+      }),
+  },
 });
 
-// Add attributes to the active NR transaction
+/** Add NR attributes + emit HTTP summary after response */
 function addNrContext(req, res, next) {
-  // userId from your auth; adjust to your app
   const userId = req.user?.id || req.session?.userId || null;
 
-  // Add as attributes so they appear on APM traces and can be used to filter logs
   newrelic.addCustomAttributes({
     requestId: req.id,
     userId,
     ip: req.ip,
     route: req.originalUrl,
+    method: req.method,
   });
 
-  // After response, log a short summary too
+  // request-scoped child logger
+  req.logger = logger.child({ requestId: req.id, route: req.originalUrl });
+
   const start = process.hrtime.bigint();
   res.on("finish", () => {
-    const durationMs = Number((process.hrtime.bigint() - start) / 1000000n);
-    logger.info({
+    const durationMs = Number((process.hrtime.bigint() - start) / 1_000_000n);
+    req.logger.info("http_summary", {
       type: "http_summary",
-      requestId: req.id,
       userId,
       method: req.method,
       url: req.originalUrl,
       status: res.statusCode,
       duration_ms: durationMs,
       ip: req.ip,
+      ua: req.headers["user-agent"],
+      referer: req.headers["referer"] || req.headers["referrer"],
+      content_length: res.getHeader("content-length"),
     });
   });
 
   next();
 }
 
-module.exports = { requestId, morganToWinston, addNrContext, logger };
+module.exports = { requestId, morganToWinston, addNrContext };

@@ -16,7 +16,9 @@ const combineCampaignAndDonation = async (campaign) => {
         const donations = await donationModel.find({ campaignId: campaign._id });
 
         // Calculate total donation and remaining amount
-        const totalDonationAmount = donations.reduce((sum, { amount = 0 }) => sum + amount, 0);
+        const totalDonationAmount = donations
+          .filter((d) => d.payment_status == "Successful")
+          .reduce((sum, { amount = 0 }) => sum + amount, 0);
         const remainingAmount = Math.max(0, campaign.campaign_amount - totalDonationAmount);
 
         // Calculate campaign status and remaining time

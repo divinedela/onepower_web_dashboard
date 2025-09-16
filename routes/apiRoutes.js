@@ -147,6 +147,7 @@ routes.post("/getForgotPasswordOtp", apiController.getForgotPasswordOtp);
 
 routes.post("/getAllNews", apiController.getAllNews);
 routes.post("/getNewsById", apiController.getNewsById);
+routes.post("/getCampaignById", apiController.getCampaignById);
 
 // Paystack payments
 routes.post(
@@ -162,7 +163,7 @@ routes.post(
 );
 routes.post(
   "/webhooks/paystack",
-  express.raw({ type: "*/*" }),
+  // express.raw({ type: "*/*" }),
   paymentController.paystackWebhook
 );
 

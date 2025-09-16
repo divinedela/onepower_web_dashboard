@@ -1,14 +1,6 @@
-// Import required modules
+// index.js
 require("dotenv").config();
 require("newrelic");
-const {
-  requestId,
-  morganToWinston,
-  addNrContext,
-  logger,
-} = require("./middleware/requestLogger");
-
-
 
 const express = require("express");
 const dotenv = require("dotenv");
@@ -19,22 +11,33 @@ const flash = require("connect-flash");
 const path = require("path");
 const MongoStore = require("connect-mongo");
 
-// Configure dotenv
+// import logger DIRECTLY from config (stable API)
+const logger = require("./config/logger");
+// import middleware functions
+const {
+  requestId,
+  morganToWinston,
+  addNrContext,
+} = require("./middleware/requestLogger");
+
+// env
 dotenv.config();
 
-// import database connect file
+// DB connect
 require("./config/conn.js");
 
-// Import flash middleware
+// flash helpers
 const flashmiddleware = require("./config/flash");
 
-// Create an express app
+// app
 const app = express();
 
+// ---- logging & tracing ----
 app.use(requestId);
 app.use(morganToWinston);
 app.use(addNrContext);
-// Configure session
+
+// ---- session ----
 app.use(
   session({
     secret: process.env.SESSION_SECRET_KEY,
@@ -44,53 +47,51 @@ app.use(
       mongoUrl: process.env.DB_CONNECTION,
       ttl: 3600,
     }),
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24 * 30,
-    },
+    cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 },
   })
 );
 
-// Use flash middleware
+// flash
 app.use(flash());
 app.use(flashmiddleware.setflash);
 
-// Configure body-parser for handling form data
+// parsers
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-//Configure passport for authentication
+// passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Configure body-parser for handling form data
+// static
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-//Routes for admin
+// routes
 const adminRoutes = require("./routes/adminRoutes.js");
 app.use(process.env.BASE_URL, adminRoutes);
 
-//Routes for api
 const apiRoutes = require("./routes/apiRoutes.js");
 app.use("/api", apiRoutes);
 
+// 404
 app.use((req, res) => {
-  logger.warn({ requestId: req.id, url: req.originalUrl }, "Route not found");
+  logger.warn("Route not found", { requestId: req.id, url: req.originalUrl });
   res.status(404).render("404");
 });
 
-// Central error handler
+// central error handler
 app.use((err, req, res, next) => {
+  // local console for dev
+  console.log("eerr here", err);
   const newrelic = require("newrelic");
   newrelic.noticeError(err, { requestId: req?.id, url: req?.originalUrl });
-  logger.error(
-    {
-      requestId: req?.id,
-      url: req?.originalUrl,
-      stack: err.stack,
-      message: err.message,
-    },
-    "Unhandled error"
-  );
+
+  logger.error("Unhandled error", {
+    requestId: req?.id,
+    url: req?.originalUrl,
+    err_message: err.message,
+    stack: err.stack,
+  });
 
   if (req.xhr || req.originalUrl?.startsWith("/api")) {
     res
@@ -102,27 +103,29 @@ app.use((err, req, res, next) => {
   }
 });
 
+// process-level safety
 process.on("unhandledRejection", (reason) => {
   const newrelic = require("newrelic");
   newrelic.noticeError(
     reason instanceof Error ? reason : new Error(String(reason))
   );
-  logger.error({ reason }, "Unhandled Promise Rejection");
+  logger.error("Unhandled Promise Rejection", {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
 });
 
 process.on("uncaughtException", (err) => {
   const newrelic = require("newrelic");
   newrelic.noticeError(err);
-  logger.error(
-    { stack: err.stack, message: err.message },
-    "Uncaught Exception"
-  );
+  logger.error("Uncaught Exception", {
+    err_message: err.message,
+    stack: err.stack,
+  });
   // consider graceful shutdown in production
 });
 
 const port = process.env.PORT || 4000;
-
-//Create server
 app.listen(port, () => {
   console.log("Server is start", port);
 });

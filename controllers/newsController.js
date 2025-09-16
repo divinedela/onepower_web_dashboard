@@ -8,6 +8,7 @@ const bannerModel = require("../model/bannerModel");
 const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
 const newsModel = require("../model/newsModel");
+const campaignModel = require("../model/campaignModel"); // added
 
 // Firebase bucket (for deletes)
 const { bucket } = require("../config/firebaseAdmin");
@@ -72,7 +73,11 @@ const loadNews = async (req, res) => {
 
 const loadAddNews = async (_req, res) => {
   try {
-    return res.render("addNews");
+    // provide campaigns for optional association
+    const campaigns = await campaignModel
+      .find({}, "_id name")
+      .sort({ createdAt: -1 });
+    return res.render("addNews", { campaigns });
   } catch (error) {
     console.log("loadAddNews error:", error.message);
     req.flash("error", "Failed to load add news");
@@ -96,19 +101,29 @@ const addNews = async (req, res) => {
     const description = (req.body.description || "").replace(/"/g, "&quot;");
     const imageUrl = getUploadedImageUrl(req);
 
+    // optional campaign association
+    let campaignId = (req.body.campaignId || "").trim();
+    if (campaignId) {
+      const exists = await campaignModel.exists({ _id: campaignId });
+      if (!exists) campaignId = "";
+    }
+
     if (!title || !description || !imageUrl) {
       await cleanupUploadedReqFiles(req.files);
       req.flash("error", "Please provide title, description and image.");
       return res.redirect(process.env.BASE_URL + "add-news");
     }
 
-    await new newsModel({
+    const doc = {
       title,
       description,
       image: imageUrl,
       status: "Publish",
       publishedAt: new Date(),
-    }).save();
+    };
+    if (campaignId) doc.campaignId = campaignId;
+
+    await new newsModel(doc).save();
 
     return res.redirect(process.env.BASE_URL + "news");
   } catch (error) {
@@ -127,7 +142,11 @@ const loadEditNews = async (req, res) => {
       req.flash("error", "News not found");
       return res.redirect(process.env.BASE_URL + "news");
     }
-    return res.render("editNews", { news, IMAGE_URL: "" });
+    // provide campaigns for dropdown + keep existing locals
+    const campaigns = await campaignModel
+      .find({}, "_id name")
+      .sort({ createdAt: -1 });
+    return res.render("editNews", { news, IMAGE_URL: "", campaigns });
   } catch (error) {
     console.log("loadEditNews error:", error.message);
     req.flash("error", "Failed to load edit news");
@@ -152,11 +171,19 @@ const editNews = async (req, res) => {
       image = newUrl;
     }
 
-    await newsModel.findOneAndUpdate(
-      { _id: id },
-      { $set: { title, description, image } },
-      { new: true }
-    );
+    const set = { title, description, image };
+    const update = { $set: set };
+
+    // optional campaign association update
+    const rawCampaign = (req.body.campaignId || "").trim();
+    if (rawCampaign === "") {
+      update.$unset = { campaignId: "" };
+    } else if (rawCampaign) {
+      const exists = await campaignModel.exists({ _id: rawCampaign });
+      if (exists) set.campaignId = rawCampaign;
+    }
+
+    await newsModel.findOneAndUpdate({ _id: id }, update, { new: true });
 
     return res.redirect(process.env.BASE_URL + "news");
   } catch (error) {

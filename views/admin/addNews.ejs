@@ -1,4 +1,3 @@
-<!-- partial:partials/header -->
 <%- include('../layouts/header.ejs') %>
 
 <div class="d-flex flex-column flex-root app-root" id="kt_app_root">
@@ -74,14 +73,14 @@
                             <div class="image-input image-input-outline image-input-placeholder" data-kt-image-input="true">
                               <img class="galleryimg image-input-wrapper w-150px h-150px"
                                    src="assets/media/svg/blank-image.svg"
-                                   alt="news image"
+                                   alt="news"
                                    id="newsImagePreview"
                                    onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';" />
                               <div class="d-flex align-items-center gap-2 mt-3">
                                 <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow"
-                                       data-bs-toggle="tooltip" data-bs-dismiss="click" title="Add Image">
+                                       data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
                                   <i class="ki-duotone ki-pencil fs-2 text-primary"><span class="path1"></span><span class="path2"></span></i>
-                                  <input type="file" name="image" id="newsImageInput" accept=".png,.jpg,.jpeg,.webp" required hidden />
+                                  <input type="file" name="image" id="newsImageInput" accept=".png,jpg,jpeg,webp" hidden />
                                 </label>
                                 <button type="button" class="btn btn-icon btn-circle btn-color-muted btn-active-color-danger w-30px h-30px bg-body shadow"
                                         id="newsImageClearBtn" data-bs-toggle="tooltip" title="Clear">
@@ -98,6 +97,19 @@
                           <div class="col-sm-12">
                             <label class="form-label required">Title</label>
                             <input type="text" class="form-control form-control-lg" name="title" placeholder="Enter title" required />
+                          </div>
+                        </div>
+
+                        <!-- Associate Project (optional) -->
+                        <div class="row mb-10">
+                          <div class="col-sm-12">
+                            <label class="form-label">Associate Project (optional)</label>
+                            <select name="campaignId" class="form-select form-select-lg">
+                              <option value="">None</option>
+                              <% if (campaigns && campaigns.length) { campaigns.forEach(function(c){ %>
+                                <option value="<%= c._id %>"><%= c.name %></option>
+                              <% }) } %>
+                            </select>
                           </div>
                         </div>
 
@@ -144,34 +156,31 @@
 </div>
 
 <script>
-(function () {
-  const input = document.getElementById("newsImageInput");
-  const preview = document.getElementById("newsImagePreview");
-  const clearBtn = document.getElementById("newsImageClearBtn");
-  const placeholder = "assets/media/svg/blank-image.svg";
+(function() {
+  const input = document.getElementById('newsImageInput');
+  const preview = document.getElementById('newsImagePreview');
+  const clearBtn = document.getElementById('newsImageClearBtn');
   let objectUrl = null;
 
   if (input) {
-    input.addEventListener("change", function () {
+    input.addEventListener('change', function() {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       if (this.files && this.files[0]) {
         objectUrl = URL.createObjectURL(this.files[0]);
         preview.src = objectUrl;
       } else {
-        preview.src = placeholder;
+        preview.src = 'assets/media/svg/blank-image.svg';
       }
     });
   }
-
   if (clearBtn) {
-    clearBtn.addEventListener("click", function () {
+    clearBtn.addEventListener('click', function() {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
-      if (input) input.value = "";
-      preview.src = placeholder;
+      if (input) input.value = '';
+      preview.src = 'assets/media/svg/blank-image.svg';
     });
   }
 })();
 </script>
 
-<!-- partial:partials/header -->
 <%- include('../layouts/footer.ejs') %>

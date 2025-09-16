@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const moment = require("moment");
 const { verifyAccess } = require("../config/verification");
+const mongoose = require("mongoose");
 
 // Importing models
 const userModel = require("../model/userModel");
@@ -2066,11 +2067,10 @@ const getForgotPasswordOtp = async (req, res) => {
   }
 };
 
-
 const getAllNews = async (req, res) => {
   try {
     await verifyAccess(req, res, async () => {
-      // Optional: simple pagination (defaults)
+      // --- keep your pagination exactly as-is ---
       const page = Math.max(parseInt(req.body.page ?? 1, 10), 1);
       const limit = Math.min(
         Math.max(parseInt(req.body.limit ?? 50, 10), 1),
@@ -2078,12 +2078,19 @@ const getAllNews = async (req, res) => {
       );
       const skip = (page - 1) * limit;
 
-      // Fetch only Published news, newest first
+      // include campaignId in projection (only change here)
       const [items, total] = await Promise.all([
         newsModel
           .find(
             { status: "Publish" },
-            { image: 1, title: 1, description: 1, publishedAt: 1, status: 1 }
+            {
+              image: 1,
+              title: 1,
+              description: 1,
+              publishedAt: 1,
+              status: 1,
+              campaignId: 1,
+            } // ← added campaignId
           )
           .sort({ publishedAt: -1, createdAt: -1 })
           .skip(skip)
@@ -2106,12 +2113,14 @@ const getAllNews = async (req, res) => {
         });
       }
 
-      // (Optional) trim overly long HTML to avoid huge payloads
-      const trimmed = items.map((n) => ({
+      // normalize ObjectIds to strings; do not alter description trimming logic
+      const news = items.map((n) => ({
         ...n,
+        _id: String(n._id),
+        campaignId: n.campaignId ? String(n.campaignId) : undefined,
         description:
           typeof n.description === "string"
-            ? n.description.slice(0, 20000) // keep rich HTML; just prevent absurdly large docs
+            ? n.description.slice(0, 20000)
             : n.description,
       }));
 
@@ -2119,7 +2128,7 @@ const getAllNews = async (req, res) => {
         data: {
           success: 1,
           message: "News Found",
-          news: trimmed,
+          news,
           page,
           limit,
           total,
@@ -2147,10 +2156,24 @@ const getNewsById = async (req, res) => {
         });
       }
 
+      if (!mongoose.isValidObjectId(newsId)) {
+        return res.json({
+          data: { success: 0, message: "Invalid newsId", error: 1 },
+        });
+      }
+
+      // IMPORTANT: include campaignId in the projection
       const item = await newsModel
         .findOne(
           { _id: newsId, status: "Publish" },
-          { image: 1, title: 1, description: 1, publishedAt: 1, status: 1 }
+          {
+            image: 1,
+            title: 1,
+            description: 1,
+            publishedAt: 1,
+            status: 1,
+            campaignId: 1,
+          }
         )
         .lean();
 
@@ -2165,17 +2188,83 @@ const getNewsById = async (req, res) => {
         });
       }
 
+      // Normalize ObjectIds to strings for the client
+      const news = {
+        ...item,
+        _id: String(item._id),
+        campaignId: item.campaignId ? String(item.campaignId) : undefined,
+      };
+
+      console.log("news", news);
+
       return res.json({
         data: {
           success: 1,
           message: "News Found",
-          news: item,
+          news,
           error: 0,
         },
       });
     });
   } catch (error) {
     console.log("Error during get news by id", error.message);
+    return res.status(500).json({
+      data: { success: 0, message: "An error occurred", error: 1 },
+    });
+  }
+};
+
+// GET CAMPAIGN BY ID (Published only)
+const getCampaignById = async (req, res) => {
+  try {
+    await verifyAccess(req, res, async () => {
+      const { campaignId } = req.body;
+      console.log("first campaign", campaignId);
+
+      if (!campaignId) {
+        return res.json({
+          data: { success: 0, message: "campaignId is required", error: 1 },
+        });
+      }
+
+      if (!mongoose.isValidObjectId(campaignId)) {
+        return res.json({
+          data: { success: 0, message: "Invalid campaignId", error: 1 },
+        });
+      }
+
+      // Fetch published campaign (projection + populate same as mostPopulatedCampaign)
+      const doc = await campaignModel.findOne(
+        { _id: campaignId, status: "Publish" },
+        { status: 0, isApproved: 0, userId: 0, isUser: 0 }
+      );
+      // .populate("categoryId", "_id image name");
+
+      if (!doc) {
+        return res.json({
+          data: {
+            success: 0,
+            message: "Project Not Found",
+            campaign: null,
+            error: 1,
+          },
+        });
+      }
+
+      // Enrich with donation info (same service you use elsewhere)
+      const [enriched] = await combineCampaignAndDonation([doc]);
+
+      return res.json({
+        data: {
+          success: 1,
+          message: "Project Found",
+          campaign: enriched || doc,
+          error: 0,
+        },
+      });
+    });
+  } catch (error) {
+    console.log("Error during get campaign by id", error.message);
     return res.status(500).json({
       data: { success: 0, message: "An error occurred", error: 1 },
     });
@@ -2222,4 +2311,5 @@ module.exports = {
   testOTP,
   getAllNews,
   getNewsById,
+  getCampaignById,
 };

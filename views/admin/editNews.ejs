@@ -91,7 +91,7 @@
                                 <label class="btn btn-icon btn-circle btn-color-muted btn-active-color-primary w-30px h-30px bg-body shadow"
                                        data-bs-toggle="tooltip" data-bs-dismiss="click" title="Change Image">
                                   <i class="ki-duotone ki-pencil fs-2 text-primary"><span class="path1"></span><span class="path2"></span></i>
-                                  <input type="file" name="image" id="newsImageInput" accept=".png,.jpg,.jpeg,.webp" hidden />
+                                  <input type="file" name="image" id="newsImageInput" accept=".png,jpg,jpeg,webp" hidden />
                                 </label>
                                 <button type="button" class="btn btn-icon btn-circle btn-color-muted btn-active-color-danger w-30px h-30px bg-body shadow"
                                         id="newsImageClearBtn" data-bs-toggle="tooltip" title="Clear">
@@ -108,6 +108,18 @@
                           <div class="col-sm-12">
                             <label class="form-label required">Title</label>
                             <input type="text" class="form-control form-control-lg" name="title" placeholder="Enter title" value="<%= news.title %>" required />
+                          </div>
+                        </div>
+                        <!-- Associate Project (optional) -->
+                        <div class="row mb-10">
+                          <div class="col-sm-12">
+                            <label class="form-label">Associate Project (optional)</label>
+                            <select name="campaignId" class="form-select form-select-lg">
+                              <option value="">None</option>
+                              <% if (campaigns && campaigns.length) { campaigns.forEach(function(c){ %>
+                                <option value="<%= c._id %>" <%= String(news.campaignId || '') === String(c._id) ? 'selected' : '' %>><%= c.name %></option>
+                              <% }) } %>
+                            </select>
                           </div>
                         </div>
 
