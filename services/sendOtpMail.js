@@ -44,6 +44,15 @@ const sendOtpMail = async (otp, email, firstname, lastname) => {
       })
     );
 
+    logger.info({
+      area: "mail",
+      action: "generate otp",
+      otp,
+      email,
+      firstname,
+      lastname
+    });
+
     if (!otp || !email || !firstname || !lastname) {
       const e = new Error("Invalid input parameters");
       newrelic.noticeError(e, { email });
