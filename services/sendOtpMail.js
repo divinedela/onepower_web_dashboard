@@ -48,9 +48,9 @@ const sendOtpMail = async (otp, email, firstname, lastname) => {
       area: "mail",
       action: "generate otp",
       otp,
-      email,
-      firstname,
-      lastname
+      userEmail: email || "",
+      userFirstname: firstname || "",
+      userLastname: lastname || "",
     });
 
     if (!otp || !email || !firstname || !lastname) {
