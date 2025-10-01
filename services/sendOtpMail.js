@@ -1,12 +1,11 @@
-
 const logger = require("../config/logger");
 const newrelic = require("newrelic");
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
+const SENDER_EMAIL = process.env.SENDER_EMAIL;
 
 const sendOtpMail = async (otp, email, firstname, lastname) => {
   try {
-
     logger.info({
       area: "mail",
       action: "generate otp",
@@ -26,7 +25,7 @@ const sendOtpMail = async (otp, email, firstname, lastname) => {
     newrelic.recordCustomEvent("OtpMailAttempt", { email, hasOtp: !!otp });
 
     const { data, error } = await resend.emails.send({
-      from: SMTP_SENDER_EMAIL, // must be verified in Resend
+      from: SENDER_EMAIL, // must be verified in Resend
       to: email,
       subject: "OTP Verification - Onepower Foundation",
       html: `
