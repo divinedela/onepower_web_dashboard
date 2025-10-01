@@ -1,48 +1,11 @@
-const nodemailer = require("nodemailer");
-const path = require("path");
+
 const logger = require("../config/logger");
 const newrelic = require("newrelic");
-const mailModel = require("../model/mailModel");
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOtpMail = async (otp, email, firstname, lastname) => {
   try {
-    const SMTP = await mailModel.findOne();
-    if (!SMTP) {
-      const e = new Error("Mail details not found");
-      newrelic.noticeError(e);
-      throw e;
-    }
-
-    const SMTP_USERNAME = SMTP.mail_username;
-    const SMTP_HOSTNAME = SMTP.host;
-    const SMTP_SENDER_EMAIL = SMTP.senderEmail;
-
-    logger.info({
-      area: "mail",
-      action: "create_transporter",
-      host: SMTP_HOSTNAME,
-      port: SMTP.port,
-      user: SMTP_USERNAME,
-    });
-
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOSTNAME,
-      port: Number(SMTP.port),
-      secure: Number(SMTP.port) === 465,
-      requireTLS: Number(SMTP.port) !== 465,
-      auth: { user: SMTP_USERNAME, pass: SMTP.mail_password },
-      logger: true
-    });
-
-    const { default: hbs } = await import("nodemailer-express-handlebars");
-    const templatesPath = path.resolve(__dirname, "../views/mail-templates/");
-    transporter.use(
-      "compile",
-      hbs({
-        viewEngine: { partialsDir: templatesPath, defaultLayout: false },
-        viewPath: templatesPath,
-      })
-    );
 
     logger.info({
       area: "mail",
@@ -62,13 +25,24 @@ const sendOtpMail = async (otp, email, firstname, lastname) => {
     // Record a custom event & attributes around the send
     newrelic.recordCustomEvent("OtpMailAttempt", { email, hasOtp: !!otp });
 
-    const info = await transporter.sendMail({
-      from: SMTP_SENDER_EMAIL,
-      template: "otp",
+    const { data, error } = await resend.emails.send({
+      from: SMTP_SENDER_EMAIL, // must be verified in Resend
       to: email,
-      subject: "OTP Verification",
-      context: { OTP: otp, email, firstname, lastname },
+      subject: "OTP Verification - Onepower Foundation",
+      html: `
+    <p>Hello <strong>${firstname} ${lastname}</strong>,</p>
+    <p>Your OTP code is:</p>
+    <h2 style="color:#2e86de;">${otp}</h2>
+    <p>This code will expire in 10 minutes.</p>
+  `,
     });
+
+    if (error) {
+      throw new Error(error.message || "Failed to send OTP mail");
+    }
+
+    // mimic nodemailer info object shape a little
+    const info = { messageId: data?.id, response: "Sent via Resend" };
 
     logger.info({
       area: "mail",
