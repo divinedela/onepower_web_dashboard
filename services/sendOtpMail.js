@@ -30,8 +30,8 @@ const sendOtpMail = async (otp, email, firstname, lastname) => {
       port: Number(SMTP.port),
       secure: Number(SMTP.port) === 465,
       requireTLS: Number(SMTP.port) !== 465,
-
       auth: { user: SMTP_USERNAME, pass: SMTP.mail_password },
+      logger: true
     });
 
     const { default: hbs } = await import("nodemailer-express-handlebars");
