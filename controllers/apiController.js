@@ -92,6 +92,8 @@ const signUp = async (req, res) => {
         password,
       } = req.body;
 
+      console.log("sign up request body", req.body)
+
       // Check if user already exists
       const existingUser = await userModel.findOne({ email });
 
