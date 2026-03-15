@@ -1,0 +1,315 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+  <!--begin::Page-->
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <!--begin::navbar-->
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <%- include('../layouts/navbar.ejs') %>
+      <div class="app-header-separator"></div>
+    </div>
+    <!--end::navbar-->
+
+    <!--begin::Wrapper-->
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <!--begin::Sidebar-->
+      <div id="kt_app_sidebar" class="app-sidebar flex-column"
+           data-kt-drawer="true"
+           data-kt-drawer-name="app-sidebar"
+           data-kt-drawer-activate="{default: true, lg: false}"
+           data-kt-drawer-overlay="true"
+           data-kt-drawer-width="250px"
+           data-kt-drawer-direction="start"
+           data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <%- include('../layouts/sidebar.ejs') %>
+      </div>
+      <!--end::Sidebar-->
+
+      <!--begin::Main-->
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <div class="d-flex flex-column flex-column-fluid">
+
+          <!--begin::Toolbar-->
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a href="#" class="text-gray-500">
+                        <i class="ki-solid ki-document fs-2x text-gray-400 me-n1"></i>
+                      </a>
+                    </li>
+                    <li class="breadcrumb-item"><i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i></li>
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">News</li>
+                    <li class="breadcrumb-item"><i class="ki-duotone ki-right fs-4 text-gray-700 mx-n1"></i></li>
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">View All News</li>
+                  </ul>
+                  <h1 class="page-heading d-flex flex-column justify-content-start text-dark fw-bolder fs-1 lh-0 mt-1">News List</h1>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--end::Toolbar-->
+
+          <!--begin::Content-->
+          <div id="kt_app_content" class="app-content flex-column-fluid">
+            <div id="kt_app_content_container" class="app-container container-fluid">
+
+              <!--begin::Card-->
+              <div class="card card-flush">
+                <div class="card-header border-0 pt-6">
+                  <div class="card-title mb-5">
+                    <div class="d-flex align-items-center position-relative my-1">
+                      <i class="ki-duotone ki-magnifier fs-3 position-absolute ms-4"><span class="path1"></span><span class="path2"></span></i>
+                      <input type="text" data-kt-customer-table-filter="search" class="form-control w-250px ps-12" placeholder="Search News" />
+                    </div>
+                  </div>
+
+                  <div class="card-toolbar flex-row-fluid justify-content-end gap-5">
+                    <div class="w-100 mw-150px">
+                      <select class="form-select form-select-lg" data-control="select2" data-hide-search="true" data-placeholder="Status" data-kt-status-filter="status">
+                        <option value=""></option>
+                        <option value="all">ALL</option>
+                        <option value="Publish">Publish</option>
+                        <option value="UnPublish">UnPublish</option>
+                      </select>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                      <a href="<%= process.env.BASE_URL %>add-news" class="btn btn-primary">
+                        <i class="ki-duotone ki-plus fs-2"></i>Add News
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body pt-0">
+
+                  <!-- flash -->
+                  <% if (flash && flash.error && flash.error.length > 0) { %>
+                  <div class="alert alert-dismissible bg-light-danger d-flex align-items-center mb-8">
+                    <span class="fs-4 text-danger fw-bold text-center ps-5"><%= flash.error %></span>
+                    <button type="button" class="btn btn-icon ms-sm-auto" data-bs-dismiss="alert">
+                      <i class="ki-duotone ki-cross fs-1 text-danger fw-bold"><span class="path1"></span><span class="path2"></span></i>
+                    </button>
+                  </div>
+                  <% } %>
+
+                  <!-- helpers -->
+                  <%
+                    function resolveImg(u) {
+                      const PLACEHOLDER = 'assets/media/svg/blank-image.svg';
+                      if (!u) return PLACEHOLDER;
+                      if (/^https?:\/\//i.test(u)) return u;
+                      return (typeof IMAGE_URL !== 'undefined' ? (IMAGE_URL || '') : '') + u;
+                    }
+                    const currentAdmin = (loginData || []).find(a => String(a._id) === String(locals.admin && locals.admin._id));
+                    const isSuperAdmin = currentAdmin && currentAdmin.isAdmin === 1;
+                  %>
+
+                  <div class="table-responsive mb-5">
+                    <table class="table align-middle table-row-dashed fs-6 gy-5" id="kt_customers_table">
+                      <thead>
+                        <tr class="text-start text-gray-400 fw-bold fs-6 text-uppercase gs-0">
+                          <th class="min-w-50px">No</th>
+                          <th class="min-w-50px">Img</th>
+                          <th class="min-w-180px">Title</th>
+                          <th class="min-w-130px">Published</th>
+                          <th class="min-w-100px">Status</th>
+                          <th class="min-w-90px">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody class="fw-semibold text-gray-600">
+                        <% if (news && news.length > 0) { %>
+                          <% news.forEach(function(n, i){ %>
+                            <tr>
+                              <td><%= i + 1 %></td>
+                              <td>
+                                <a href="<%= resolveImg(n.image) %>" class="symbol symbol-35px overflow-hidden" data-fslightbox="lightbox-news">
+                                  <img src="<%= resolveImg(n.image) %>" alt="<%= n.title %>" class="symbol-label border border-gray-400"
+                                       loading="lazy" decoding="async"
+                                       onerror="this.onerror=null;this.src='assets/media/svg/blank-image.svg';">
+                                </a>
+                              </td>
+                              <td class="fw-bolder text-dark"><%= n.title %></td>
+                              <td class="fw-bold text-gray-800">
+                                <%= n.publishedAt
+                                  ? new Date(n.publishedAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric'})
+                                  : '-' %>
+                              </td>
+                              <td class="pe-0">
+                                <% if (isSuperAdmin) { %>
+                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_change_status_news_<%= i %>">
+                                    <% if (n.status === "Publish") { %>
+                                      <div class="badge badge-success">Publish</div>
+                                    <% } else { %>
+                                      <div class="badge badge-danger">UnPublish</div>
+                                    <% } %>
+                                  </a>
+                                <% } else { %>
+                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access"
+                                     data-message="You don't have permission to <b>publish/unpublish news</b>. As a <b>demo admin</b>, you can only view the content.">
+                                    <% if (n.status === "Publish") { %>
+                                      <div class="badge badge-success">Publish</div>
+                                    <% } else { %>
+                                      <div class="badge badge-danger">UnPublish</div>
+                                    <% } %>
+                                  </a>
+                                <% } %>
+                              </td>
+                              <td class="pe-0">
+                                <div class="d-flex align-items-center">
+                                  <% if (isSuperAdmin) { %>
+                                    <a href="<%= process.env.BASE_URL %>edit-news?id=<%= n._id %>" class="menu-link me-2" title="Edit" data-bs-toggle="tooltip">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-primary text-primary">
+                                          <i class="ki-solid ki-pencil fs-2 text-primary"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_delete_news_<%= i %>" title="Delete" data-bs-toggle="tooltip">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-danger text-danger">
+                                          <i class="ki-solid ki-trash fs-2 text-danger"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                  <% } else { %>
+                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access"
+                                       data-message="You don't have permission to <b>edit news</b>. As a <b>demo admin</b>, you can only view the content."
+                                       class="me-2">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-primary text-primary">
+                                          <i class="ki-solid ki-pencil fs-2 text-primary"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access"
+                                       data-message="You don't have permission to <b>delete news</b>. As a <b>demo admin</b>, you can only view the content.">
+                                      <div class="symbol symbol-40px symbol-circle user-select-none">
+                                        <div class="symbol-label bg-light-danger text-danger">
+                                          <i class="ki-solid ki-trash fs-2 text-danger"></i>
+                                        </div>
+                                      </div>
+                                    </a>
+                                  <% } %>
+                                </div>
+                              </td>
+                            </tr>
+
+                            <!-- Modal: Change Status -->
+                            <div class="modal fade" id="kt_modal_change_status_news_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                              <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title fs-1">Confirmation</h5>
+                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                    </div>
+                                  </div>
+                                  <div class="modal-body">
+                                    <p class="message text-center fs-3 mb-0">
+                                      Are you sure you want to <%= n.status === "Publish" ? "unpublish" : "publish" %> the news <b><%= n.title %></b>?
+                                    </p>
+                                  </div>
+                                  <div class="modal-footer">
+                                    <a href="<%= process.env.BASE_URL %>news-status?id=<%= n._id %>">
+                                      <button type="button" class="btn <%= n.status === "Publish" ? "btn-danger" : "btn-success" %>">
+                                        <%= n.status === "Publish" ? "UnPublish" : "Publish" %>
+                                      </button>
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <!-- /Modal: Change Status -->
+
+                            <!-- Modal: Delete -->
+                            <div class="modal fade" id="kt_modal_delete_news_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                              <div class="modal-dialog">
+                                <div class="modal-content">
+                                  <div class="modal-header">
+                                    <h5 class="modal-title fs-2">Delete Confirmation</h5>
+                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                                    </div>
+                                  </div>
+                                  <div class="modal-body">
+                                    <p class="text-center fs-3">Are you sure you want to delete the news <b><%= n.title %></b>?</p>
+                                  </div>
+                                  <div class="modal-footer">
+                                    <a href="<%= process.env.BASE_URL %>delete-news?id=<%= n._id %>">
+                                      <button type="button" class="btn btn-danger">Delete</button>
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <!-- /Modal: Delete -->
+                          <% }) %>
+                        <% } else { %>
+                          <tr>
+                            <td colspan="6" class="text-center py-10">
+                              <span class="text-gray-600">No news records available.</span>
+                            </td>
+                          </tr>
+                        <% } %>
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+              </div>
+              <!--end::Card-->
+
+            </div>
+          </div>
+          <!--end::Content-->
+
+          <!--begin::Modal - Not Authorized -->
+          <div class="modal fade" id="kt_modal_no_access" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog  modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title fs-1">Not Authorized</h5>
+                  <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                  </div>
+                </div>
+                <div class="modal-body">
+                  <p class="text-center fs-3 mb-0" id="modal-message"></p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!--end::Modal-->
+
+        </div>
+
+        <div id="kt_app_footer" class="app-footer align-items-center justify-content-center justify-content-md-between flex-column flex-md-row py-3">
+          <div class="text-dark order-2 order-md-1">
+            <span class="text-muted fw-semibold me-1"></span>
+            <a href="#" target="_blank" class="text-gray-800 text-hover-primary"></a>
+          </div>
+        </div>
+      </div>
+      <!--end:::Main-->
+    </div>
+  </div>
+</div>
+<!--end::App-->
+
+<!--begin::Scrolltop-->
+<div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+  <i class="ki-duotone ki-arrow-up"><span class="path1"></span><span class="path2"></span></i>
+</div>
+<!--end::Scrolltop-->
+
+<!-- partial:partials/header -->
+<%- include('../layouts/footer.ejs') %>

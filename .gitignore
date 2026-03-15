@@ -1,0 +1,6 @@
+.env*
+node_modules/
+firebase-*.json
+firebase.json
+.DS_Store
+newrelic_agent.log
