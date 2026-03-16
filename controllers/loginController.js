@@ -11,6 +11,15 @@ const userModel = require("../model/userModel");
 const mailModel = require("../model/mailModel");
 const donationModel = require("../model/donationModel");
 const { verifyAdminAccess } = require("../config/verification");
+const {
+    findAdminByEmail,
+    findAdminById,
+    updateAdminById,
+} = require("../services/supabaseAdminLoginService");
+const { getSupabaseEnvStatus } = require("../config/supabaseEnv");
+
+const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
+const isSupabaseDataProvider = dataProvider === "supabase";
 
 
 // delete image
@@ -39,10 +48,12 @@ const login = async (req, res) => {
 
     try {
 
-        const email = req.body.email;
+        const email = String(req.body.email || "").trim().toLowerCase();
         const password = sha256.x2(req.body.password);
 
-        const isExistEmail = await adminLoginModel.findOne({ email: email });
+        const isExistEmail = isSupabaseDataProvider
+            ? await findAdminByEmail(email)
+            : await adminLoginModel.findOne({ email: email });
 
         if (!isExistEmail) {
 
@@ -58,7 +69,7 @@ const login = async (req, res) => {
 
             } else {
 
-                req.session.userId = isExistEmail._id;
+                req.session.userId = isExistEmail._id || isExistEmail.id;
                 return res.redirect(process.env.BASE_URL + "dashboard");
             }
         }
@@ -78,6 +89,13 @@ const loadDashboard = async (req, res) => {
 
         // check if the user is verified
         await verifyAdminAccess(req, res, async () => {
+
+        if (isSupabaseDataProvider) {
+            const supabaseEnvStatus = getSupabaseEnvStatus();
+            return res.render("dashboardSupabaseMigration", {
+                supabaseEnvStatus,
+            });
+        }
 
         // count documents
         const totalIntro = await introModel.countDocuments({ status: "Publish" });
@@ -123,7 +141,14 @@ const loadProfile = async (req, res) => {
 
     try {
 
-        const profile = await adminLoginModel.findById(req.session.userId);
+        const profile = isSupabaseDataProvider
+            ? await findAdminById(req.session.userId)
+            : await adminLoginModel.findById(req.session.userId);
+
+        if (!profile) {
+            req.flash("error", "Failed to load profile");
+            return res.redirect(process.env.BASE_URL);
+        }
 
         return res.render("profile", { profile, IMAGE_URL: process.env.IMAGE_URL });
 
@@ -139,7 +164,14 @@ const loadEditProfile = async (req, res) => {
 
     try {
 
-        const profile = await adminLoginModel.findById(req.session.userId);
+        const profile = isSupabaseDataProvider
+            ? await findAdminById(req.session.userId)
+            : await adminLoginModel.findById(req.session.userId);
+
+        if (!profile) {
+            req.flash("error", "Failed to load edit profile");
+            return res.redirect(process.env.BASE_URL);
+        }
 
         return res.render("editProfile", { profile, IMAGE_URL: process.env.IMAGE_URL });
 
@@ -155,7 +187,7 @@ const editProfile = async (req, res) => {
 
     try {
 
-        const id = req.body.id;
+        const id = req.body.id || req.session.userId;
         const name = req.body.name;
         const contact = req.body.contact;
         const oldImage = req.body.oldImage
@@ -166,7 +198,11 @@ const editProfile = async (req, res) => {
             avatar = req.file.filename;
         }
 
-        const profile = await adminLoginModel.findOneAndUpdate({ _id: id }, { $set: { name, contact, avatar } });
+        if (isSupabaseDataProvider) {
+            await updateAdminById(id, { name, contact, avatar });
+        } else {
+            await adminLoginModel.findOneAndUpdate({ _id: id }, { $set: { name, contact, avatar } });
+        }
 
         return res.redirect(process.env.BASE_URL + "profile");
 
@@ -205,7 +241,9 @@ const changePassword = async (req, res) => {
             return res.redirect(req.get("referer"));
         }
 
-        const matchPassword = await adminLoginModel.findOne({ _id: req.session.userId });
+        const matchPassword = isSupabaseDataProvider
+            ? await findAdminById(req.session.userId)
+            : await adminLoginModel.findOne({ _id: req.session.userId });
 
         if (!matchPassword) {
             req.flash('error', 'Old password is wrong, please try again');
@@ -217,7 +255,11 @@ const changePassword = async (req, res) => {
             return res.redirect(req.get("referer"));
         }
 
-        await adminLoginModel.findOneAndUpdate({ _id: req.session.userId }, { $set: { password: newpassword } }, { new: true });
+        if (isSupabaseDataProvider) {
+            await updateAdminById(req.session.userId, { passwordHash: newpassword });
+        } else {
+            await adminLoginModel.findOneAndUpdate({ _id: req.session.userId }, { $set: { password: newpassword } }, { new: true });
+        }
 
         return res.redirect(process.env.BASE_URL + "dashboard");
 
@@ -276,6 +318,14 @@ const loadMailConfig = async (req, res) => {
 const mailConfig = async (req, res) => {
 
     try {
+
+        if (isSupabaseDataProvider) {
+            req.flash(
+                "warning",
+                "Mail config management is still in Mongo migration. Re-enable after mail settings move to Supabase."
+            );
+            return res.redirect(process.env.BASE_URL + "dashboard");
+        }
 
         const loginData = await adminLoginModel.findById(req.session.userId);
 

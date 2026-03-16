@@ -1,14 +1,21 @@
 // Importing models
 const adminLoginModel = require("../model/adminLoginModel");
+const { findAdminById } = require("../services/supabaseAdminLoginService");
+
+const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
+const isSupabaseDataProvider = dataProvider === "supabase";
 
 const isLogin = async (req, res, next) => {
 
     try {
 
         if (req.session.userId) {
-            const admin = await adminLoginModel.findById({ _id: req.session.userId });
+            const admin = isSupabaseDataProvider
+                ? await findAdminById(req.session.userId)
+                : await adminLoginModel.findById({ _id: req.session.userId });
             if (!admin) {
-                throw new Error('Admin not found');
+                req.session.destroy(() => {});
+                return res.redirect(process.env.BASE_URL);
             }
             res.locals.admin = admin;
             next();
@@ -19,6 +26,7 @@ const isLogin = async (req, res, next) => {
 
     } catch (error) {
         console.log(error.message);
+        return res.redirect(process.env.BASE_URL);
     }
 }
 

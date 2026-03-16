@@ -27,7 +27,7 @@ const sendOtpMail = async (otp, email, firstname, lastname) => {
     const { data, error } = await resend.emails.send({
       from: SENDER_EMAIL, // must be verified in Resend
       to: email,
-      subject: "OTP Verification - Onepower Foundation",
+      subject: "OTP Verification - One Power Foundation",
       html: `
     <p>Hello <strong>${firstname} ${lastname}</strong>,</p>
     <p>Your OTP code is:</p>

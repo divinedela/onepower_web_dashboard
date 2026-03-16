@@ -3,13 +3,11 @@ require("dotenv").config();
 require("newrelic");
 
 const express = require("express");
-const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const passport = require("passport");
 const flash = require("connect-flash");
 const path = require("path");
-const MongoStore = require("connect-mongo");
 
 // import logger DIRECTLY from config (stable API)
 const logger = require("./config/logger");
@@ -20,11 +18,14 @@ const {
   addNrContext,
 } = require("./middleware/requestLogger");
 
-// env
-dotenv.config();
+const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
+const isSupabaseDataProvider = dataProvider === "supabase";
+const { logSupabaseEnvStatus } = require("./config/supabaseEnv");
 
-// DB connect
-require("./config/conn.js");
+// DB connect (Mongo mode only)
+if (!isSupabaseDataProvider) {
+  require("./config/conn.js");
+}
 
 // flash helpers
 const flashmiddleware = require("./config/flash");
@@ -38,17 +39,28 @@ app.use(morganToWinston);
 app.use(addNrContext);
 
 // ---- session ----
+const sessionConfig = {
+  secret: process.env.SESSION_SECRET_KEY || "onepower-dev-session-secret",
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 },
+};
+
+if (!isSupabaseDataProvider) {
+  const MongoStore = require("connect-mongo");
+  sessionConfig.store = MongoStore.create({
+    mongoUrl: process.env.DB_CONNECTION,
+    ttl: 3600,
+  });
+} else {
+  logger.warn(
+    "Running with DATA_PROVIDER=supabase. Only migrated admin routes are enabled; Mongo-backed modules remain disabled."
+  );
+  logSupabaseEnvStatus(logger);
+}
+
 app.use(
-  session({
-    secret: process.env.SESSION_SECRET_KEY,
-    resave: false,
-    saveUninitialized: true,
-    store: MongoStore.create({
-      mongoUrl: process.env.DB_CONNECTION,
-      ttl: 3600,
-    }),
-    cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 },
-  })
+  session(sessionConfig)
 );
 
 // flash
@@ -75,16 +87,30 @@ app.use(passport.session());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // routes
-const adminRoutes = require("./routes/adminRoutes.js");
-app.use(process.env.BASE_URL, adminRoutes);
+if (!isSupabaseDataProvider) {
+  const adminRoutes = require("./routes/adminRoutes.js");
+  app.use(process.env.BASE_URL, adminRoutes);
 
-const apiRoutes = require("./routes/apiRoutes.js");
-app.use("/api", apiRoutes);
+  const apiRoutes = require("./routes/apiRoutes.js");
+  app.use("/api", apiRoutes);
+} else {
+  const supabaseBootstrapRoutes = require("./routes/apiSupabaseBootstrapRoutes.js");
+  const adminRoutes = require("./routes/adminRoutes.js");
+  app.use(process.env.BASE_URL, adminRoutes);
+  app.use("/api", supabaseBootstrapRoutes);
+}
 
 // 404
 app.use((req, res) => {
   logger.warn("Route not found", { requestId: req.id, url: req.originalUrl });
-  res.status(404).render("404");
+  if (isSupabaseDataProvider || req.originalUrl?.startsWith("/api")) {
+    return res.status(404).json({
+      ok: false,
+      error: "Not Found",
+      requestId: req.id || null,
+    });
+  }
+  return res.status(404).render("404");
 });
 
 // central error handler
@@ -101,7 +127,7 @@ app.use((err, req, res, next) => {
     stack: err.stack,
   });
 
-  if (req.xhr || req.originalUrl?.startsWith("/api")) {
+  if (isSupabaseDataProvider || req.xhr || req.originalUrl?.startsWith("/api")) {
     res
       .status(500)
       .json({ error: "Internal Server Error", requestId: req?.id });

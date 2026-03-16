@@ -1,204 +1,285 @@
-// Importing required modules 
-
-// Importing models
 const loginModel = require("../model/adminLoginModel");
 const introModel = require("../model/introModel");
 const { verifyAdminAccess } = require("../config/verification");
-// Importing the service function to delete uploaded files
+const { findAdminById } = require("../services/supabaseAdminLoginService");
+const {
+  listIntros,
+  getIntroById,
+  createIntro,
+  updateIntroById,
+  deleteIntroById,
+  toggleIntroStatus,
+} = require("../services/supabaseIntroService");
 const deleteImage = require("../services/deleteImage");
 
+const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
+const isSupabaseDataProvider = dataProvider === "supabase";
 
-// Importing the service function to check if the user is verified
-//const { checkVerify, clearConfigData } = require("../services/getConfigstoreInstance");
+function isSuperAdmin(admin) {
+  return Number(admin?.isAdmin ?? admin?.is_admin ?? 0) === 1;
+}
 
-// Load and render the view for add intro
+async function getCurrentAdmin(req) {
+  const adminId = req.session?.userId;
+  if (!adminId) return null;
+  if (isSupabaseDataProvider) {
+    return findAdminById(adminId);
+  }
+  return loginModel.findById(adminId);
+}
+
+async function guardIntroWriteAccess(req, res, redirectPath) {
+  const admin = await getCurrentAdmin(req);
+  if (!admin) {
+    req.flash("error", "Admin session not found. Please login again.");
+    res.redirect(process.env.BASE_URL);
+    return null;
+  }
+
+  if (!isSuperAdmin(admin)) {
+    req.flash(
+      "error",
+      "You do not have permission to modify intro content. As a demo admin, you can only view the content."
+    );
+    res.redirect(redirectPath);
+    return null;
+  }
+
+  return admin;
+}
+
 const loadAddIntro = async (req, res) => {
+  try {
+    return res.render("addIntro");
+  } catch (error) {
+    console.log(error.message);
+    req.flash("error", "Failed to load add intro");
+    return res.redirect(process.env.BASE_URL + "intro");
+  }
+};
 
-    try {
-
-        return res.render("addIntro");
-
-    } catch (error) {
-        console.log(error.message);
-        req.flash("error", "Failed to load add intro");
-        return res.redirect(process.env.BASE_URL + "intro");
-    }
-}
-
-// add intro
 const addIntro = async (req, res) => {
-
-    try {
-
-        const loginData = await loginModel.findById(req.session.adminId);
-
-        if (loginData && loginData.is_admin === 0) {
-
-            // delete upload image
-            deleteImage(req.file.filename);
-
-            req.flash('error', 'You do not have permission to add intro. As a demo admin, you can only view the content.');
-            return res.redirect(process.env.BASE_URL + "add-intro");
-        }
-
-        // Extract data from the request body
-        const image = req.file.filename;
-        const title = req.body.title;
-        const description = req.body.description;
-
-        // save intro
-        const newIntro = new introModel({ image, title, description }).save();
-
-        return res.redirect(process.env.BASE_URL + "intro");
-
-    } catch (error) {
-        console.log(error.message);
-        req.flash("error", "Failed to add intro");
-        return res.redirect(process.env.BASE_URL + "intro");
+  try {
+    const admin = await guardIntroWriteAccess(
+      req,
+      res,
+      process.env.BASE_URL + "add-intro"
+    );
+    if (!admin) {
+      if (req.file?.filename) deleteImage(req.file.filename);
+      return;
     }
-}
 
-// Load and render the view for intro
+    if (!req.file?.filename) {
+      req.flash("error", "Intro image is required.");
+      return res.redirect(process.env.BASE_URL + "add-intro");
+    }
+
+    const payload = {
+      image: req.file.filename,
+      title: req.body.title,
+      description: req.body.description,
+    };
+
+    if (isSupabaseDataProvider) {
+      await createIntro(payload);
+    } else {
+      await new introModel(payload).save();
+    }
+
+    return res.redirect(process.env.BASE_URL + "intro");
+  } catch (error) {
+    console.log(error.message);
+    req.flash("error", "Failed to add intro");
+    return res.redirect(process.env.BASE_URL + "intro");
+  }
+};
+
 const loadIntro = async (req, res) => {
+  try {
+    await verifyAdminAccess(req, res, async () => {
+      const intro = isSupabaseDataProvider
+        ? await listIntros()
+        : await introModel.find();
 
-    try {
-        await verifyAdminAccess(req, res, async () => {
-        // check if the user is verified
-        // const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-        // const currentUrl = protocol + '://' + req.get('host') + process.env.BASE_URL;
-        // const verifyData = await checkVerify(currentUrl);
+      const loginData = isSupabaseDataProvider
+        ? (res.locals.admin ? [res.locals.admin] : [])
+        : await loginModel.find();
 
-        // if (verifyData === 0) { clearConfigData(); }
+      return res.render("intro", {
+        intro,
+        IMAGE_URL: process.env.IMAGE_URL,
+        loginData,
+      });
+    });
+  } catch (error) {
+    console.log(error.message);
+    req.flash("error", "Failed to load intro");
+    return res.redirect(req.get("referer"));
+  }
+};
 
-        // fetch all intro
-        const intro = await introModel.find();
-
-        //  fetch admin
-        const loginData = await loginModel.find();
-
-        return res.render("intro", { intro, IMAGE_URL: process.env.IMAGE_URL, loginData });
-        });
-
-    } catch (error) {
-        console.log(error.message);
-        req.flash("error", "Failed to load intro");
-        return res.redirect(req.get("referer"));
-    }
-}
-
-// Load and render the view for edit intro
 const loadEditIntro = async (req, res) => {
-
-    try {
-
-        // Extract data from the request query
-        const id = req.query.id;
-
-        // fetch intro using id
-        const intro = await introModel.findOne({ _id: id });
-
-        return res.render("editIntro", { intro, IMAGE_URL: process.env.IMAGE_URL });
-
-    } catch (error) {
-        console.log(error.message);
-        req.flash("error", "Failed to load edit intro");
-        return res.redirect(req.get("referer"));
+  try {
+    const id = req.query.id;
+    if (!id) {
+      req.flash("error", "Invalid intro id.");
+      return res.redirect(process.env.BASE_URL + "intro");
     }
-}
 
-// edit intro
+    const intro = isSupabaseDataProvider
+      ? await getIntroById(id)
+      : await introModel.findOne({ _id: id });
+
+    if (!intro) {
+      req.flash("error", "Intro not found.");
+      return res.redirect(process.env.BASE_URL + "intro");
+    }
+
+    return res.render("editIntro", { intro, IMAGE_URL: process.env.IMAGE_URL });
+  } catch (error) {
+    console.log(error.message);
+    req.flash("error", "Failed to load edit intro");
+    return res.redirect(req.get("referer"));
+  }
+};
+
 const editIntro = async (req, res) => {
-    const id = req.body.id;
-    try {
+  const id = req.body.id;
+  try {
+    const admin = await guardIntroWriteAccess(
+      req,
+      res,
+      process.env.BASE_URL + "intro"
+    );
+    if (!admin) return;
 
-        // Extract data from the request body
-        const title = req.body.title;
-        const description = req.body.description;
-        const oldImage = req.body.oldImage;
-
-        let image = oldImage;
-        if (req.file) {
-            // delete old image
-            deleteImage(oldImage);
-            image = req.file.filename;
-        }
-
-        // update intro
-        const updateIntro = await introModel.findOneAndUpdate({ _id: id }, { $set: { title, description, image } });
-
-        return res.redirect(process.env.BASE_URL + "intro");
-
-    } catch (error) {
-        console.log(error.message);
-        req.flash("error", "Failed to edit intro");
-        return res.redirect(process.env.BASE_URL + "edit-intro?id=" + id);
+    if (!id) {
+      req.flash("error", "Invalid intro id.");
+      return res.redirect(process.env.BASE_URL + "intro");
     }
-}
 
-// delete intro
+    const title = req.body.title;
+    const description = req.body.description;
+    const oldImage = req.body.oldImage;
+
+    let image = oldImage;
+    if (req.file?.filename) {
+      if (oldImage) deleteImage(oldImage);
+      image = req.file.filename;
+    }
+
+    if (isSupabaseDataProvider) {
+      await updateIntroById(id, { title, description, image });
+    } else {
+      await introModel.findOneAndUpdate(
+        { _id: id },
+        { $set: { title, description, image } }
+      );
+    }
+
+    return res.redirect(process.env.BASE_URL + "intro");
+  } catch (error) {
+    console.log(error.message);
+    req.flash("error", "Failed to edit intro");
+    return res.redirect(process.env.BASE_URL + "edit-intro?id=" + id);
+  }
+};
+
 const deleteIntro = async (req, res) => {
+  try {
+    const admin = await guardIntroWriteAccess(
+      req,
+      res,
+      process.env.BASE_URL + "intro"
+    );
+    if (!admin) return;
 
-    try {
-
-        // Extract data from the request query
-        const id = req.query.id;
-
-        // fetch intro using id
-        const intro = await introModel.findById(id);
-
-        // delete image
-        deleteImage(intro.image);
-
-        // delete intro
-        const deletedIntro = await introModel.deleteOne({ _id: id });
-
-        return res.redirect(process.env.BASE_URL + "intro");
-
-    } catch (error) {
-        console.log(error.message);
-        req.flash("error", "Failed to delete intro");
-        return res.redirect(process.env.BASE_URL + "intro");
+    const id = req.query.id;
+    if (!id) {
+      req.flash("error", "Invalid intro id.");
+      return res.redirect(process.env.BASE_URL + "intro");
     }
-}
 
-// update intro status
+    const intro = isSupabaseDataProvider
+      ? await getIntroById(id)
+      : await introModel.findById(id);
+
+    if (!intro) {
+      req.flash("error", "Intro not found.");
+      return res.redirect(process.env.BASE_URL + "intro");
+    }
+
+    if (intro.image) deleteImage(intro.image);
+
+    if (isSupabaseDataProvider) {
+      await deleteIntroById(id);
+    } else {
+      await introModel.deleteOne({ _id: id });
+    }
+
+    return res.redirect(process.env.BASE_URL + "intro");
+  } catch (error) {
+    console.log(error.message);
+    req.flash("error", "Failed to delete intro");
+    return res.redirect(process.env.BASE_URL + "intro");
+  }
+};
+
 const updateIntroStatus = async (req, res) => {
+  try {
+    const admin = await guardIntroWriteAccess(
+      req,
+      res,
+      process.env.BASE_URL + "intro"
+    );
+    if (!admin) return;
 
-    try {
-        // Extract data from the request query
-        const id = req.query.id;
-
-        // Validate id
-        if (!id) {
-            req.flash('error', 'Something went wrong. Please try again.');
-            return res.redirect(process.env.BASE_URL + "intro");
-        }
-
-        // Update subject status in a single query
-        await introModel.findByIdAndUpdate(
-            id,
-            [{ $set: { status: { $cond: { if: { $eq: ["$status", "Publish"] }, then: "UnPublish", else: "Publish" } } } }],
-            { new: true }
-        );
-
-        return res.redirect(process.env.BASE_URL + "intro");
-
-    } catch (error) {
-        console.error(error.message);
-        req.flash('error', 'Something went wrong. Please try again.');
-        return res.redirect(process.env.BASE_URL + "intro");
+    const id = req.query.id;
+    if (!id) {
+      req.flash("error", "Something went wrong. Please try again.");
+      return res.redirect(process.env.BASE_URL + "intro");
     }
-}
 
+    if (isSupabaseDataProvider) {
+      const updated = await toggleIntroStatus(id);
+      if (!updated) {
+        req.flash("error", "Intro not found.");
+      }
+    } else {
+      await introModel.findByIdAndUpdate(
+        id,
+        [
+          {
+            $set: {
+              status: {
+                $cond: {
+                  if: { $eq: ["$status", "Publish"] },
+                  then: "UnPublish",
+                  else: "Publish",
+                },
+              },
+            },
+          },
+        ],
+        { new: true }
+      );
+    }
+
+    return res.redirect(process.env.BASE_URL + "intro");
+  } catch (error) {
+    console.error(error.message);
+    req.flash("error", "Something went wrong. Please try again.");
+    return res.redirect(process.env.BASE_URL + "intro");
+  }
+};
 
 module.exports = {
-
-    loadAddIntro,
-    addIntro,
-    loadIntro,
-    loadEditIntro,
-    editIntro,
-    deleteIntro,
-    updateIntroStatus
-
-}
+  loadAddIntro,
+  addIntro,
+  loadIntro,
+  loadEditIntro,
+  editIntro,
+  deleteIntro,
+  updateIntroStatus,
+};

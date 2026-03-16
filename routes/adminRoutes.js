@@ -34,6 +34,40 @@ const notificationController = require("../controllers/notificationController");
 const currencyController = require("../controllers/currencyController");
 const verificationController = require("../controllers/verificationController");
 
+const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
+const isSupabaseDataProvider = dataProvider === "supabase";
+const supabaseAllowedAdminRoutes = new Set([
+  "GET /",
+  "POST /",
+  "GET /dashboard",
+  "GET /profile",
+  "GET /edit-profile",
+  "POST /edit-profile",
+  "GET /change-password",
+  "POST /change-password",
+  "GET /add-intro",
+  "POST /add-intro",
+  "GET /intro",
+  "GET /edit-intro",
+  "POST /edit-intro",
+  "GET /delete-intro",
+  "GET /intro-status",
+  "GET /logout",
+]);
+
+routes.use((req, res, next) => {
+  if (!isSupabaseDataProvider) return next();
+
+  const routeKey = `${req.method.toUpperCase()} ${req.path}`;
+  if (supabaseAllowedAdminRoutes.has(routeKey)) return next();
+
+  req.flash(
+    "warning",
+    "This admin module is not migrated to Supabase yet. Available: dashboard, profile, password, intro."
+  );
+  return res.redirect(`${process.env.BASE_URL || "/"}dashboard`);
+});
+
 // Routes For Login
 routes.get("", isLogout, loginController.loadLogin);
 
