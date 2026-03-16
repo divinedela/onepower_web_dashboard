@@ -268,11 +268,13 @@ const verifyOTP = async (req, res) => {
       // Update user notification data
       const { registrationToken, deviceId } = req.body;
 
-      await userNotificationModel.updateOne(
-        { userId: updatedUser._id, deviceId },
-        { $set: { registrationToken } },
-        { upsert: true }
-      );
+      if (registrationToken && deviceId) {
+        await userNotificationModel.updateOne(
+          { userId: updatedUser._id, deviceId },
+          { $set: { registrationToken } },
+          { upsert: true }
+        );
+      }
 
       return res.json({
         data: {
@@ -369,11 +371,13 @@ const signIn = async (req, res) => {
       // Update user notification data
       const { registrationToken, deviceId } = req.body;
 
-      await userNotificationModel.updateOne(
-        { userId: user._id, deviceId },
-        { $set: { registrationToken } },
-        { upsert: true }
-      );
+      if (registrationToken && deviceId) {
+        await userNotificationModel.updateOne(
+          { userId: user._id, deviceId },
+          { $set: { registrationToken } },
+          { upsert: true }
+        );
+      }
 
       // response based on user verification status
       if (!user.isVerified) {
