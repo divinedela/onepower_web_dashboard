@@ -16,7 +16,6 @@ const bannerModel = require("../model/bannerModel");
 const newsModel = require("../model/newsModel"); // <-- for clarity (populate newsId)
 const donationModel = require("../model/donationModel");
 const favouriteCampaignModel = require("../model/favouriteCampaignModel");
-const paymentGatewayModel = require("../model/paymentGatewayModel");
 const pageModel = require("../model/pageModel");
 const userNotificationModel = require("../model/userNotificationModel");
 const notificationModel = require("../model/notificationModel");
@@ -1880,76 +1879,27 @@ const getAllNotification = async (req, res) => {
 const getAllPaymentGateway = async (req, res) => {
   try {
     await verifyAccess(req, res, async () => {
-      // fetch all payment gateway
-      const paymentGatewayConfig = await paymentGatewayModel.findOne();
+      const paystackPublicKey = process.env.PAYSTACK_PUBLIC_KEY || "";
+      const paymentData = {
+        paystack: {
+          paystack_is_enable: paystackPublicKey ? 1 : 0,
+          paystack_mode:
+            process.env.PAYSTACK_MODE === "live" ? "liveMode" : "testMode",
+          paystack_public_key: paystackPublicKey,
+        },
+        stripe: { stripe_is_enable: 0 },
+        razorpay: { razorpay_is_enable: 0 },
+        paypal: { paypal_is_enable: 0 },
+      };
 
-      if (!paymentGatewayConfig) {
-        return res.json({
-          data: {
-            success: 0,
-            message: "Payment Gateway Not Found",
-            paymentGateway: {},
-            error: 1,
-          },
-        });
-      } else {
-        // Payment gateway configuration found
-        const paymentData = {
-          stripe: {
-            stripe_is_enable: paymentGatewayConfig.stripe_is_enable,
-            stripe_mode: paymentGatewayConfig.stripe_mode,
-            stripe_publishable_key:
-              paymentGatewayConfig.stripe_mode === "testMode"
-                ? paymentGatewayConfig.stripe_test_mode_publishable_key
-                : paymentGatewayConfig.stripe_live_mode_publishable_key,
-            stripe_secret_key:
-              paymentGatewayConfig.stripe_mode === "testMode"
-                ? paymentGatewayConfig.stripe_test_mode_secret_key
-                : paymentGatewayConfig.stripe_live_mode_publishable_key,
-          },
-          razorpay: {
-            razorpay_is_enable: paymentGatewayConfig.razorpay_is_enable,
-            razorpay_mode: paymentGatewayConfig.razorpay_mode,
-            razorpay_key_id:
-              paymentGatewayConfig.razorpay_mode === "testMode"
-                ? paymentGatewayConfig.razorpay_test_mode_key_id
-                : paymentGatewayConfig.razorpay_live_mode_key_id,
-            razorpay_key_secret:
-              paymentGatewayConfig.razorpay_mode === "testMode"
-                ? paymentGatewayConfig.razorpay_test_mode_key_secret
-                : paymentGatewayConfig.razorpay_live_mode_key_secret,
-          },
-          paypal: {
-            paypal_is_enable: paymentGatewayConfig.paypal_is_enable,
-            paypal_mode: paymentGatewayConfig.paypal_mode,
-            paypal_merchant_id:
-              paymentGatewayConfig.paypal_mode === "testMode"
-                ? paymentGatewayConfig.paypal_test_mode_merchant_id
-                : paymentGatewayConfig.paypal_live_mode_merchant_id,
-            paypal_tokenization_key:
-              paymentGatewayConfig.paypal_mode === "testMode"
-                ? paymentGatewayConfig.paypal_test_mode_tokenization_key
-                : paymentGatewayConfig.paypal_live_mode_tokenization_key,
-            paypal_public_key:
-              paymentGatewayConfig.paypal_mode === "testMode"
-                ? paymentGatewayConfig.paypal_test_mode_public_key
-                : paymentGatewayConfig.paypal_live_mode_public_key,
-            paypal_private_key:
-              paymentGatewayConfig.paypal_mode === "testMode"
-                ? paymentGatewayConfig.paypal_test_mode_private_key
-                : paymentGatewayConfig.paypal_live_mode_private_key,
-          },
-        };
-
-        return res.json({
-          data: {
-            success: 1,
-            message: "Payment Gateway Found",
-            paymentGateway: paymentData,
-            error: 0,
-          },
-        });
-      }
+      return res.json({
+        data: {
+          success: 1,
+          message: "Payment Gateway Found",
+          paymentGateway: paymentData,
+          error: 0,
+        },
+      });
     });
   } catch (error) {
     console.log("Error during get all payment gateway", error.message);

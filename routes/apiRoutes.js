@@ -153,17 +153,18 @@ routes.post("/getCampaignById", apiController.getCampaignById);
 routes.post(
   "/payments/paystack/create",
   verifyAccess,
+  checkAuthentication,
   paymentController.paystackCreate
 );
 routes.get("/payments/paystack/return", paymentController.paystackReturn);
 routes.post(
   "/payments/paystack/verify",
   verifyAccess,
+  checkAuthentication,
   paymentController.paystackVerify
 );
 routes.post(
   "/webhooks/paystack",
-  // express.raw({ type: "*/*" }),
   paymentController.paystackWebhook
 );
 

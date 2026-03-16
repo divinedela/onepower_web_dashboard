@@ -57,7 +57,15 @@ app.use(flashmiddleware.setflash);
 
 // parsers
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(
+  bodyParser.json({
+    verify: (req, _res, buf) => {
+      if (req.originalUrl?.startsWith("/api/webhooks/paystack")) {
+        req.rawBody = Buffer.from(buf);
+      }
+    },
+  })
+);
 
 // passport
 app.use(passport.initialize());

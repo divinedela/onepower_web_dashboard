@@ -34,22 +34,36 @@ const ps = axios.create({
 
 // helper
 const nowIsoDate = () => new Date().toISOString().split("T")[0];
+const toUserIdString = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+  if (typeof user === "object" && user._id) return String(user._id);
+  return String(user);
+};
 
 // 1) Initialize transaction  -------------------------------------------
 /**
  * POST /payments/paystack/create
- * body: { campaignId, amountMajor:number, currency:string, email:string, userId?:string }
+ * body: { campaignId, amountMajor:number, currency:string, email:string }
  * output: { reference, authorizationUrl }
  *
  * Idempotency: if a Pending donation exists for (userId,campaignId,amount,currency) within 2m, return same reference.
  */
 const paystackCreate = async (req, res) => {
   try {
-    // verifyAccess middleware should set req.user (keep existing behavior elsewhere)
-    const userId = req.user || req.body.userId;
+    const userId = toUserIdString(req.user);
     const { campaignId, amountMajor, currency = "GHS", email } = req.body;
+    const normalizedCurrency = String(currency || "GHS").toUpperCase();
+    const amountMajorNum = Number(amountMajor);
 
-    if (!campaignId || !amountMajor || !email || !userId) {
+    if (
+      !campaignId ||
+      !email ||
+      !userId ||
+      !amountMajorNum ||
+      Number.isNaN(amountMajorNum) ||
+      amountMajorNum <= 0
+    ) {
       return res.json({
         data: { success: 0, message: "Missing required fields", error: 1 },
       });
@@ -60,20 +74,20 @@ const paystackCreate = async (req, res) => {
     const existing = await donationModel.findOne({
       userId,
       campaignId,
-      amount: Number(amountMajor),
-      currency: "GHS",
+      amount: amountMajorNum,
+      currency: normalizedCurrency,
       payment_method: "Paystack",
       payment_status: "Pending",
       createdAt: { $gte: twoMinAgo },
     });
 
-    if (existing?.transaction_id) {
+    if (existing?.transaction_id && existing?.authorization_url) {
       return res.json({
         data: {
           success: 1,
           message: "Reusing pending Paystack transaction",
           reference: existing.transaction_id,
-          authorizationUrl: existing.metadata?.authorization_url, // may be undefined if not stored
+          authorizationUrl: existing.authorization_url,
           error: 0,
         },
       });
@@ -84,22 +98,29 @@ const paystackCreate = async (req, res) => {
     )}`;
 
     // Build return URL (Paystack-hosted page will bounce here; you redirect to app deep link)
+    if (!PUBLIC_HOST) {
+      return res.json({
+        data: {
+          success: 0,
+          message: "Payment callback host is not configured",
+          error: 1,
+        },
+      });
+    }
     const callback_url = `${PUBLIC_HOST}/payments/paystack/return`;
 
     // Convert to kobo
-    const amountKobo = Math.round(Number(amountMajor) * 100);
+    const amountKobo = Math.round(amountMajorNum * 100);
 
     // Initialize at Paystack
     const initPayload = {
       email,
       amount: amountKobo,
-      currency: "GHS",
+      currency: normalizedCurrency,
       reference,
       callback_url,
       metadata: { campaignId, userId },
     };
-
-    console.log("first", initPayload);
 
     const resp = await ps.post("/transaction/initialize", initPayload);
     const data = resp?.data?.data;
@@ -117,12 +138,13 @@ const paystackCreate = async (req, res) => {
     await donationModel.create({
       userId,
       campaignId,
-      amount: Number(amountMajor), // re major units
-      currency,
+      amount: amountMajorNum,
+      currency: normalizedCurrency,
       date: nowIsoDate(),
       payment_method: "Paystack",
       transaction_id: reference,
       payment_status: "Pending",
+      authorization_url: data.authorization_url,
     });
 
     return res.json({
@@ -168,6 +190,7 @@ const test = async (req, res) => {
  */
 const paystackVerify = async (req, res) => {
   try {
+    const requesterUserId = toUserIdString(req.user);
     const { reference } = req.body;
     if (!reference) {
       return res.json({
@@ -187,6 +210,17 @@ const paystackVerify = async (req, res) => {
         data: {
           success: 0,
           message: "Unknown reference",
+          status: "failed",
+          error: 1,
+        },
+      });
+    }
+
+    if (String(donation.userId) !== requesterUserId) {
+      return res.json({
+        data: {
+          success: 0,
+          message: "Unauthorized reference access",
           status: "failed",
           error: 1,
         },
@@ -237,21 +271,25 @@ const paystackVerify = async (req, res) => {
     // Compare amounts/currency
     const amountKobo = Math.round(donation.amount * 100);
     const amountMatches = Number(d.amount) === amountKobo;
+    const currencyMatches =
+      (d.currency || "").toUpperCase() ===
+      (donation.currency || "GHS").toUpperCase();
 
     let final = { payment_status: "Failed", failure_reason: "" };
-    if ((d.status || "").toLowerCase() === "success" && amountMatches) {
+    if ((d.status || "").toLowerCase() === "success" && amountMatches && currencyMatches) {
       final.payment_status = "Successful";
-      console.log("finak is successful");
     } else {
       const reasons = [];
       if ((d.status || "").toLowerCase() !== "success")
         reasons.push(`ps_status=${d.status}`);
       if (!amountMatches)
         reasons.push(`amount_mismatch ps=${d.amount} our=${amountKobo}`);
+      if (!currencyMatches)
+        reasons.push(
+          `currency_mismatch ps=${d.currency} our=${donation.currency}`
+        );
       final.failure_reason = reasons.join("; ");
-
-      console.log("reason for failei", final.failure_reason);
-      if (!amountMatches) final.flagged = true;
+      if (!amountMatches || !currencyMatches) final.flagged = true;
     }
 
     await donationModel.updateOne({ _id: donation._id }, { $set: final });
@@ -285,15 +323,12 @@ const paystackVerify = async (req, res) => {
  * header: x-paystack-signature
  */
 const paystackWebhook = async (req, res) => {
-  console.log("webhook called", req.body);
   const requestId = req.id || null;
   const t0 = Date.now();
 
   try {
     const sig = req.headers["x-paystack-signature"];
-    const secret = process.env.PAYSTACK_SECRET_KEY;
-
-    console.log("secrete here", secret);
+    const secret = PAYSTACK_WEBHOOK_SECRET || PAYSTACK_SECRET_KEY;
 
     if (!secret) {
       log("error", "Paystack: missing webhook secret", { requestId });
@@ -307,14 +342,15 @@ const paystackWebhook = async (req, res) => {
         .json({ error: "Paystack: missing signature header" });
     }
 
-    // IMPORTANT: req.body is a Buffer because route uses express.raw()
-    const raw = Buffer.isBuffer(req.body)
+    const raw = Buffer.isBuffer(req.rawBody)
+      ? req.rawBody
+      : Buffer.isBuffer(req.body)
       ? req.body
-      : Buffer.from(String(req.body || ""));
+      : Buffer.from(JSON.stringify(req.body || {}));
 
     const computed = crypto
       .createHmac("sha512", secret)
-      .update(JSON.stringify(req.body))
+      .update(raw)
       .digest("hex");
     if (sig !== computed) {
       log("warn", "Paystack: invalid signature", { requestId });
@@ -323,6 +359,11 @@ const paystackWebhook = async (req, res) => {
 
     // Parse JSON only after signature passes
     let event = req.body;
+    if (Buffer.isBuffer(event)) {
+      event = JSON.parse(event.toString("utf8"));
+    } else if (typeof event === "string") {
+      event = JSON.parse(event);
+    }
 
     const type = event?.event || "unknown";
     const tx = event?.data || {};

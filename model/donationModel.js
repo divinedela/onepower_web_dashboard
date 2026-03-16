@@ -31,17 +31,12 @@ const donationSchema = new mongoose.Schema(
     },
     payment_status: {
       type: String,
-      enum: ["Successful", "Failed"],
-      required: true,
-      trim: true,
-    },
-    payment_status: {
-      type: String,
       enum: ["Pending", "Successful", "Failed"],
       required: true,
       trim: true,
       default: "Pending",
     },
+    authorization_url: { type: String, default: "", trim: true },
     failure_reason: { type: String, default: "", trim: true },
     flagged: { type: Boolean, default: false }, // e.g., currency/amount mismatch, ended campaign, etc.
   },
