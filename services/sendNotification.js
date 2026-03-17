@@ -3,6 +3,7 @@ const { admin } = require("../config/firebaseAdmin");
 const {
   listUserDevices,
   createNotification,
+  listUserDevicesByUserIds,
 } = require("../services/supabaseContentService");
 
 const INVALID_TOKEN_ERRORS = new Set([
@@ -118,8 +119,22 @@ async function sendAdminNotification(title, message) {
   }
 }
 
+async function sendToUsers(userIds = [], title, message) {
+  if (!Array.isArray(userIds) || !userIds.length) return;
+  const rows = await listUserDevicesByUserIds(userIds);
+  const tokens = [
+    ...new Set(
+      rows.map((r) => r.registration_token?.trim()).filter(Boolean)
+    ),
+  ];
+  if (!tokens.length) return;
+  await createNotification({ recipient: "User", title, message });
+  await sendPushNotification(tokens, title, message);
+}
+
 module.exports = {
   fetchAllUserToken,
   sendPushNotification,
+  sendToUsers,
   sendAdminNotification,
 };

@@ -300,6 +300,15 @@ async function deleteUserDevicesByTokens(tokens = []) {
   });
 }
 
+async function listUserDevicesByUserIds(userIds = []) {
+  if (!userIds.length) return [];
+  const inList = userIds.map((id) => `"${id}"`).join(",");
+  const res = await client().get("/user_notification_devices", {
+    params: { select: "*", user_id: `in.(${inList})` },
+  });
+  return res.data || [];
+}
+
 // ---------- users ----------
 async function listRecentUsers(limit = 10) {
   const res = await client().get("/users", {
