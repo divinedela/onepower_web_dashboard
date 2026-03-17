@@ -8,7 +8,8 @@
     "start": "nodemon index.js",
     "check:syntax": "node --check index.js controllers/supabaseAuthController.js controllers/loginController.js middleware/auth.js routes/apiSupabaseBootstrapRoutes.js services/supabaseAuthProviderService.js services/supabaseUserAuthService.js services/supabaseAdminLoginService.js services/authSecurityService.js",
     "test:integration": "node --test tests/integration/*.test.js",
-    "admin:promote": "node scripts/promote-user-admin.js"
+    "admin:promote": "node scripts/promote-user-admin.js",
+    "push:prune-tokens": "node scripts/prune-invalid-tokens.js"
   },
   "keywords": [],
   "author": "",
