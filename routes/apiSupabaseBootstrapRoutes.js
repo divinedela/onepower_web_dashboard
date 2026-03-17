@@ -5,6 +5,8 @@ const supabaseAuthController = require("../controllers/supabaseAuthController");
 const { uploadAvatar } = require("../middleware/upload.single.stream");
 const { createApiRateLimitMiddleware } = require("../services/authSecurityService");
 const { requireRole } = require("../middleware/requireRole");
+const { getAuthUserByAccessToken } = require("../services/supabaseAuthProviderService");
+const { upsertUserDevice } = require("../services/supabaseContentService");
 
 const routes = express.Router();
 
@@ -59,6 +61,47 @@ routes.get("/health", (_req, res) => {
     mode: "supabase-bootstrap",
     ts: new Date().toISOString(),
   });
+});
+
+// Register / refresh device token for push notifications (Supabase auth bearer)
+routes.post("/register-device", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : "";
+    const { deviceId = "", registrationToken = "", platform = "unknown" } =
+      req.body || {};
+
+    if (!token) {
+      return res.status(401).json({ ok: false, error: "Missing bearer token" });
+    }
+    if (!deviceId || !registrationToken) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "deviceId and registrationToken are required" });
+    }
+
+    const authUser = await getAuthUserByAccessToken(token);
+    const userId = authUser?.id;
+    if (!userId) {
+      return res.status(401).json({ ok: false, error: "Invalid access token" });
+    }
+
+    const saved = await upsertUserDevice({
+      userId,
+      deviceId,
+      registrationToken,
+      platform,
+    });
+
+    return res.status(200).json({ ok: true, device: saved });
+  } catch (error) {
+    console.error("register-device error", error);
+    return res
+      .status(500)
+      .json({ ok: false, error: "Failed to register device" });
+  }
 });
 
 routes.get("/migration/status", (_req, res) => {

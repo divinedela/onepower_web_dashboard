@@ -89,7 +89,13 @@ async function sendPushNotification(registrationTokens, title, message) {
       });
     }
 
-    // TODO: prune invalid tokens in Supabase (requires device PK or delete helper).
+    if (invalidTokens.size) {
+      try {
+        await deleteUserDevicesByTokens([...invalidTokens]);
+      } catch (pruneErr) {
+        console.error("Error pruning invalid tokens", pruneErr);
+      }
+    }
 
     console.log("Notifications send summary:", {
       totalTokens: registrationTokens.length,

@@ -273,6 +273,33 @@ async function listUserDevices(userId = null) {
   return res.data || [];
 }
 
+async function upsertUserDevice({ userId, deviceId, registrationToken, platform = "unknown" }) {
+  const payload = {
+    user_id: userId,
+    device_id: deviceId,
+    registration_token: registrationToken,
+    platform,
+  };
+  const res = await client().post("/user_notification_devices", payload, {
+    headers: {
+      ...optsReturn.headers,
+      Prefer: "resolution=merge-duplicates",
+    },
+    params: {
+      on_conflict: "user_id,device_id",
+      select: "*",
+    },
+  });
+  return res.data?.[0] || null;
+}
+
+async function deleteUserDevicesByTokens(tokens = []) {
+  if (!tokens.length) return;
+  await client().delete("/user_notification_devices", {
+    params: { registration_token: `in.(${tokens.map((t) => `"${t}"`).join(",")})` },
+  });
+}
+
 // ---------- users ----------
 async function listRecentUsers(limit = 10) {
   const res = await client().get("/users", {
