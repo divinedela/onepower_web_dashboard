@@ -1,35 +1,87 @@
 // Importing required modules
 const sha256 = require("sha256");
+const moment = require("moment");
 
-// Importing models
-const adminLoginModel = require("../model/adminLoginModel");
-const introModel = require("../model/introModel");
-const categoryModel = require("../model/categoryModel");
-const campaignModel = require("../model/campaignModel");
-const bannerModel = require("../model/bannerModel");
-const userModel = require("../model/userModel");
-const mailModel = require("../model/mailModel");
-const donationModel = require("../model/donationModel");
 const { verifyAdminAccess } = require("../config/verification");
 const {
     findAdminByEmail,
     findAdminById,
     updateAdminById,
 } = require("../services/supabaseAdminLoginService");
+const {
+    signInWithPassword,
+    ensureAuthUser,
+    findAuthUserByEmail,
+    updateAuthUserById,
+    resetPasswordForEmail,
+    updateUserPasswordWithAccessToken,
+    getAuthRedirectUrl,
+    getSupabaseErrorMessage,
+    getSupabaseErrorCode,
+} = require("../services/supabaseAuthProviderService");
+const {
+    countCategories,
+    countCampaigns,
+    countUserCampaignsApproved,
+    countBanners,
+    countUsers,
+    countActiveUsers,
+    countDonations,
+    listCampaigns,
+    listRecentUsers,
+    getCampaignDonationStatsForIds,
+} = require("../services/supabaseContentService");
+const logger = require("../config/logger");
+const {
+    getClientIp,
+    getSignInLockoutStatus,
+    registerSignInFailure,
+    registerSignInSuccess,
+} = require("../services/authSecurityService");
 const { getSupabaseEnvStatus } = require("../config/supabaseEnv");
 
-const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
-const isSupabaseDataProvider = dataProvider === "supabase";
+const isSupabaseDataProvider = true;
 
+function isSuperAdmin(admin) {
+    return Number(admin?.isAdmin ?? admin?.is_admin ?? 0) === 1;
+}
 
-// delete image
-const deleteImage = require("../services/deleteImage");
+function auditAdminEvent(event, req, extra = {}) {
+    logger.info("admin.auth.audit", {
+        event,
+        adminId: req?.session?.userId || null,
+        ip: getClientIp(req),
+        userAgent: req?.headers?.["user-agent"] || "",
+        ...extra,
+    });
+}
 
-// combine campaign and donation
-const combineCampaignAndDonation = require("../services/combineCampaignAndDonation");
+function mapAdminSignInError(error) {
+    const message = String(getSupabaseErrorMessage(error, "") || "").toLowerCase();
+    const code = String(getSupabaseErrorCode(error, "") || "").toLowerCase();
+    if (code.includes("email_not_confirmed") || message.includes("email not confirmed")) {
+        return "Email not verified for admin account. Please verify email first.";
+    }
+    if (code.includes("invalid_grant") || message.includes("invalid login credentials")) {
+        return "Invalid admin credentials.";
+    }
+    return "Unable to login right now. Please try again.";
+}
 
-// Importing the service function to check if the user is verified
-//const { checkVerify, clearConfigData } = require("../services/getConfigstoreInstance");
+function getPasswordResetRedirectUrl() {
+    const publicBase = String(process.env.PUBLIC_DASHBOARD_URL || process.env.APP_PUBLIC_URL || "").trim();
+    if (publicBase) {
+        return `${publicBase.replace(/\/$/, "")}/reset-password`;
+    }
+
+    const envRedirect = String(getAuthRedirectUrl() || "").trim();
+    if (envRedirect) return envRedirect;
+
+    const appUrl = String(process.env.APP_URL || "http://localhost:4000").trim();
+    const basePath = String(process.env.BASE_URL || "/").replace(/\/$/, "");
+    return `${appUrl.replace(/\/$/, "")}${basePath}/reset-password`;
+}
+
 
 // Load and render the login view
 const loadLogin = async (req, res) => {
@@ -49,18 +101,88 @@ const login = async (req, res) => {
     try {
 
         const email = String(req.body.email || "").trim().toLowerCase();
-        const password = sha256.x2(req.body.password);
+        const passwordRaw = String(req.body.password || "");
+        const password = sha256.x2(passwordRaw);
+        const ip = getClientIp(req);
 
-        const isExistEmail = isSupabaseDataProvider
-            ? await findAdminByEmail(email)
-            : await adminLoginModel.findOne({ email: email });
+        const isExistEmail = await findAdminByEmail(email);
+
+        if (isSupabaseDataProvider) {
+            const lockStatus = await getSignInLockoutStatus({
+                scope: "admin_sign_in",
+                email,
+                ip,
+            });
+            if (lockStatus.blocked) {
+                req.flash(
+                    "error",
+                    `Too many failed login attempts. Try again in ${lockStatus.retryAfterSec} seconds.`
+                );
+                auditAdminEvent("login_blocked", req, { email, retryAfterSec: lockStatus.retryAfterSec });
+                return res.redirect(process.env.BASE_URL);
+            }
+        }
 
         if (!isExistEmail) {
+            if (isSupabaseDataProvider) {
+                await registerSignInFailure({ scope: "admin_sign_in", email, ip });
+                auditAdminEvent("login_failed", req, { email, reason: "admin_not_found" });
+            }
 
             req.flash("error", "We're sorry, something went wrong when attempting to login...");
             return res.redirect(process.env.BASE_URL);
         }
         else {
+
+            if (isSupabaseDataProvider && !isSuperAdmin(isExistEmail)) {
+                await registerSignInFailure({ scope: "admin_sign_in", email, ip });
+                auditAdminEvent("login_failed", req, { email, reason: "not_admin_role" });
+                req.flash("error", "You do not have admin access.");
+                return res.redirect(process.env.BASE_URL);
+            }
+
+            if (isSupabaseDataProvider) {
+                let authData;
+                try {
+                    authData = await signInWithPassword(email, passwordRaw);
+                } catch (error) {
+                    await registerSignInFailure({ scope: "admin_sign_in", email, ip });
+                    auditAdminEvent("login_failed", req, { email, reason: "invalid_credentials" });
+                    req.flash("error", mapAdminSignInError(error));
+                    return res.redirect(process.env.BASE_URL);
+                }
+
+                const accessToken = authData?.access_token || authData?.session?.access_token;
+                const refreshToken = authData?.refresh_token || authData?.session?.refresh_token || "";
+                const authUserId = authData?.user?.id || authData?.session?.user?.id || "";
+                if (!accessToken) {
+                    await registerSignInFailure({ scope: "admin_sign_in", email, ip });
+                    auditAdminEvent("login_failed", req, { email, reason: "missing_access_token" });
+                    req.flash("error", "We're sorry, something went wrong when attempting to login...");
+                    return res.redirect(process.env.BASE_URL);
+                }
+
+                if (authUserId && String(isExistEmail.auth_user_id || "") !== String(authUserId)) {
+                    await updateAdminById(isExistEmail._id || isExistEmail.id, {
+                        authUserId,
+                    });
+                }
+
+                await new Promise((resolve, reject) =>
+                    req.session.regenerate((err) => (err ? reject(err) : resolve()))
+                );
+                req.session.userId = isExistEmail._id || isExistEmail.id;
+                req.session.adminAccessToken = accessToken;
+                req.session.adminRefreshToken = refreshToken;
+                req.session.adminAuthUserId = authUserId;
+                await new Promise((resolve) => req.session.save(() => resolve()));
+                await registerSignInSuccess({ scope: "admin_sign_in", email, ip });
+                auditAdminEvent("login_success", req, {
+                    email,
+                    authUserId,
+                });
+                return res.redirect(process.env.BASE_URL + "dashboard");
+            }
 
             if (password !== isExistEmail.password) {
 
@@ -76,6 +198,12 @@ const login = async (req, res) => {
 
     } catch (error) {
         console.log(error.message);
+        if (isSupabaseDataProvider) {
+            auditAdminEvent("login_error", req, {
+                email: String(req.body.email || "").trim().toLowerCase(),
+                reason: error.message,
+            });
+        }
         req.flash("error", "Failed to login");
         return res.redirect(process.env.BASE_URL);
 
@@ -91,9 +219,99 @@ const loadDashboard = async (req, res) => {
         await verifyAdminAccess(req, res, async () => {
 
         if (isSupabaseDataProvider) {
-            const supabaseEnvStatus = getSupabaseEnvStatus();
-            return res.render("dashboardSupabaseMigration", {
-                supabaseEnvStatus,
+            const [
+                totalCategory,
+                totalUpcomingCampaign,
+                totalRunningCampaign,
+                totalEndedCampaign,
+                totalUserCampaign,
+                totalBanner,
+                userCount,
+                userActiveCount,
+                totalDonor,
+                runningCampaigns,
+                userCampaign,
+                users,
+            ] = await Promise.all([
+                countCategories("Publish"),
+                countCampaigns("Upcoming"),
+                countCampaigns("Running"),
+                countCampaigns("Ended"),
+                countUserCampaignsApproved(),
+                countBanners("Publish"),
+                countUsers(),
+                countActiveUsers(),
+                countDonations(),
+                listCampaigns({ status: "Running", limit: 5 }),
+                listCampaigns({ filter: { is_user: true }, limit: 7 }),
+                listRecentUsers(7),
+            ]);
+
+            const stats = await getCampaignDonationStatsForIds(runningCampaigns.map((c) => c.id));
+            const statsMap = Object.fromEntries(
+                stats.map((s) => [String(s.campaign_id), s])
+            );
+
+            const enrichCampaign = (c) => {
+                const stat = statsMap[String(c.id)] || {};
+                const totalDonationAmount = Number(stat.total_donation_amount || 0);
+                const remainingAmount =
+                    stat.remaining_amount !== undefined
+                        ? Number(stat.remaining_amount)
+                        : Math.max(0, Number(c.campaign_amount || 0) - totalDonationAmount);
+                const totalDonors = Number(stat.total_donors || 0);
+
+                const currentDate = moment();
+                const endDate = moment(c.ending_date).endOf("day");
+                const startDate = moment(c.starting_date);
+                const currentStart = moment().startOf("day");
+
+                const daysUntilStart = startDate.diff(currentStart, "days");
+                const daysUntilEnd = endDate.diff(currentStart, "days");
+
+                let remainingTime;
+                if (daysUntilEnd < 0) remainingTime = "Campaign ended";
+                else if (daysUntilStart > 0) remainingTime = `Upcoming in ${daysUntilStart} days`;
+                else if (daysUntilEnd === 0) {
+                    const remainingHours = endDate.diff(currentDate, "hours");
+                    remainingTime = remainingHours <= 0 ? "Campaign ended" : `${remainingHours} hours left`;
+                } else remainingTime = `${daysUntilEnd} days left`;
+
+                let gallery = Array.isArray(c.gallery) ? [...c.gallery] : [];
+                if (c.image && !gallery.includes(c.image)) gallery.unshift(c.image);
+
+                return {
+                    ...c,
+                    gallery,
+                    totalDonationAmount,
+                    remainingAmount,
+                    totalDonors,
+                    remainingTime,
+                };
+            };
+
+            const campaign = runningCampaigns.map(enrichCampaign);
+            const usersView = users.map((u) => ({
+                ...u,
+                isVerified: u.is_verified,
+            }));
+
+            return res.render("dashboard", {
+                totalIntro: 0,
+                totalCategory,
+                totalUpcomingCampaign,
+                totalRunningCampaign,
+                totalEndedCampaign,
+                totalUserCampaign,
+                totalBanner,
+                totalUser: userCount,
+                totalDonor,
+                userActiveCount,
+                userCount,
+                campaign,
+                userCampaign,
+                users: usersView,
+                IMAGE_URL: process.env.IMAGE_URL || "",
             });
         }
 
@@ -232,9 +450,12 @@ const changePassword = async (req, res) => {
 
     try {
 
-        const oldpassword = sha256.x2(req.body.oldpassword);
-        const newpassword = sha256.x2(req.body.newpassword);
-        const comfirmpassword = sha256.x2(req.body.comfirmpassword);
+        const oldPasswordRaw = String(req.body.oldpassword || "");
+        const newPasswordRaw = String(req.body.newpassword || "");
+        const confirmPasswordRaw = String(req.body.comfirmpassword || "");
+        const oldpassword = sha256.x2(oldPasswordRaw);
+        const newpassword = sha256.x2(newPasswordRaw);
+        const comfirmpassword = sha256.x2(confirmPasswordRaw);
 
         if (newpassword !== comfirmpassword) {
             req.flash('error', 'Confirm password does not match');
@@ -251,12 +472,58 @@ const changePassword = async (req, res) => {
         }
 
         if (oldpassword !== matchPassword.password) {
-            req.flash('error', 'Old password is wrong, please try again');
-            return res.redirect(req.get("referer"));
+            if (isSupabaseDataProvider) {
+                try {
+                    await signInWithPassword(matchPassword.email, oldPasswordRaw);
+                } catch (_error) {
+                    auditAdminEvent("password_change_failed", req, {
+                        email: matchPassword.email,
+                        reason: "invalid_old_password",
+                    });
+                    req.flash('error', 'Old password is wrong, please try again');
+                    return res.redirect(req.get("referer"));
+                }
+            } else {
+                req.flash('error', 'Old password is wrong, please try again');
+                return res.redirect(req.get("referer"));
+            }
         }
 
         if (isSupabaseDataProvider) {
-            await updateAdminById(req.session.userId, { passwordHash: newpassword });
+            const authUser = await findAuthUserByEmail(matchPassword.email);
+            if (authUser?.id) {
+                await updateAuthUserById(authUser.id, { password: newPasswordRaw });
+                if (String(matchPassword.auth_user_id || "") !== String(authUser.id)) {
+                    await updateAdminById(req.session.userId, { authUserId: authUser.id });
+                }
+            } else {
+                await ensureAuthUser({
+                    email: matchPassword.email,
+                    password: newPasswordRaw,
+                    appMetadata: { role: "admin" },
+                    userMetadata: { name: matchPassword.name || "" },
+                    updatePasswordIfExists: true,
+                });
+            }
+
+            try {
+                const authData = await signInWithPassword(matchPassword.email, newPasswordRaw);
+                req.session.adminAccessToken =
+                    authData?.access_token || authData?.session?.access_token || "";
+                req.session.adminRefreshToken =
+                    authData?.refresh_token || authData?.session?.refresh_token || "";
+                req.session.adminAuthUserId =
+                    authData?.user?.id || authData?.session?.user?.id || "";
+            } catch (_error) {
+                req.session.adminAccessToken = "";
+                req.session.adminRefreshToken = "";
+                req.session.adminAuthUserId = "";
+            }
+
+            auditAdminEvent("password_change_success", req, {
+                email: matchPassword.email,
+                authUserId: req.session.adminAuthUserId || null,
+            });
         } else {
             await adminLoginModel.findOneAndUpdate({ _id: req.session.userId }, { $set: { password: newpassword } }, { new: true });
         }
@@ -265,6 +532,11 @@ const changePassword = async (req, res) => {
 
     } catch (error) {
         console.log(error.message);
+        if (isSupabaseDataProvider) {
+            auditAdminEvent("password_change_error", req, {
+                reason: error.message,
+            });
+        }
         req.flash("error", "Failed to change password");
         return res.redirect(req.get("referer"));
     }
@@ -274,6 +546,9 @@ const changePassword = async (req, res) => {
 const logout = async (req, res) => {
 
     try {
+        req.session.adminAccessToken = "";
+        req.session.adminRefreshToken = "";
+        req.session.adminAuthUserId = "";
 
         // Destroy the session
         req.session.destroy(function (err) {
@@ -380,6 +655,96 @@ const mailConfig = async (req, res) => {
     }
 }
 
+// Load forgot password view
+const loadForgotPassword = async (req, res) => {
+    try {
+        return res.render("forgotPassword");
+    } catch (error) {
+        console.log(error.message);
+        req.flash("error", "Failed to load password reset page");
+        return res.redirect(process.env.BASE_URL);
+    }
+};
+
+// Send Supabase password reset email for admins
+const sendPasswordResetEmail = async (req, res) => {
+    try {
+        const email = String(req.body.email || "").trim().toLowerCase();
+        if (!email) {
+            req.flash("error", "Email is required");
+            return res.redirect(req.get("referer") || process.env.BASE_URL);
+        }
+
+        const admin = await findAdminByEmail(email);
+        if (!admin || !isSuperAdmin(admin)) {
+            req.flash("error", "No admin account found for that email");
+            return res.redirect(req.get("referer") || process.env.BASE_URL);
+        }
+
+        const redirectTo = getPasswordResetRedirectUrl();
+        await resetPasswordForEmail({ email, redirectTo });
+        auditAdminEvent("password_reset_email_sent", req, { email, redirectTo });
+        req.flash("success", "Password reset email sent. Check your inbox.");
+        return res.redirect(process.env.BASE_URL);
+    } catch (error) {
+        logger.error("admin.password_reset_email_failed", {
+            err_message: error.message,
+            stack: error.stack,
+        });
+        req.flash("error", getSupabaseErrorMessage(error, "Unable to send reset email"));
+        return res.redirect(req.get("referer") || process.env.BASE_URL);
+    }
+};
+
+// Load reset password view (expects access_token in URL hash)
+const loadResetPassword = async (req, res) => {
+    try {
+        return res.render("resetPassword", {
+            accessToken: String(req.query.access_token || "").trim(),
+        });
+    } catch (error) {
+        console.log(error.message);
+        req.flash("error", "Failed to load reset page");
+        return res.redirect(process.env.BASE_URL);
+    }
+};
+
+// Handle password reset submission
+const completeResetPassword = async (req, res) => {
+    try {
+        const accessToken = String(req.body.access_token || "").trim();
+        const newPassword = String(req.body.newpassword || "");
+        const confirmPassword = String(req.body.comfirmpassword || "");
+
+        if (!accessToken) {
+            req.flash("error", "Reset link is missing or expired. Please request a new one.");
+            return res.redirect(process.env.BASE_URL + "forgot-password");
+        }
+
+        if (newPassword.length < 8) {
+            req.flash("error", "Password must be at least 8 characters long.");
+            return res.redirect(req.get("referer") || process.env.BASE_URL + "reset-password");
+        }
+
+        if (newPassword !== confirmPassword) {
+            req.flash("error", "Confirm password does not match");
+            return res.redirect(req.get("referer") || process.env.BASE_URL + "reset-password");
+        }
+
+        await updateUserPasswordWithAccessToken(accessToken, newPassword);
+        auditAdminEvent("password_reset_complete", req, {});
+        req.flash("success", "Password updated. You can sign in now.");
+        return res.redirect(process.env.BASE_URL);
+    } catch (error) {
+        logger.error("admin.password_reset_complete_failed", {
+            err_message: error.message,
+            stack: error.stack,
+        });
+        req.flash("error", getSupabaseErrorMessage(error, "Unable to reset password"));
+        return res.redirect(req.get("referer") || process.env.BASE_URL + "reset-password");
+    }
+};
+
 module.exports = {
     loadLogin,
     login,
@@ -389,6 +754,10 @@ module.exports = {
     editProfile,
     loadChangePassword,
     changePassword,
+    loadForgotPassword,
+    sendPasswordResetEmail,
+    loadResetPassword,
+    completeResetPassword,
     logout,
     loadMailConfig,
     mailConfig

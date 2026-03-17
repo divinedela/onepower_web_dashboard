@@ -26,9 +26,9 @@ function normalizeAdmin(row) {
   return {
     _id: row.id,
     id: row.id,
+    auth_user_id: row.auth_user_id || null,
     name: row.name,
     email: row.email,
-    password: row.password_hash,
     contact: row.contact,
     avatar: row.avatar,
     isAdmin: Number(row.is_admin || 0),
@@ -61,13 +61,28 @@ async function findAdminById(id) {
   return normalizeAdmin(response.data?.[0]);
 }
 
+async function findAdminByAuthUserId(authUserId) {
+  const authId = String(authUserId || "").trim();
+  if (!authId) return null;
+
+  const client = getSupabaseRestClient();
+  const response = await client.get("/admin_logins", {
+    params: {
+      select: "*",
+      auth_user_id: `eq.${authId}`,
+      limit: 1,
+    },
+  });
+  return normalizeAdmin(response.data?.[0]);
+}
+
 async function updateAdminById(id, updates) {
   const payload = {};
   if (updates.name !== undefined) payload.name = updates.name;
   if (updates.contact !== undefined) payload.contact = updates.contact;
   if (updates.avatar !== undefined) payload.avatar = updates.avatar;
-  if (updates.passwordHash !== undefined) {
-    payload.password_hash = updates.passwordHash;
+  if (updates.authUserId !== undefined) {
+    payload.auth_user_id = updates.authUserId;
   }
 
   const client = getSupabaseRestClient();
@@ -87,5 +102,6 @@ async function updateAdminById(id, updates) {
 module.exports = {
   findAdminByEmail,
   findAdminById,
+  findAdminByAuthUserId,
   updateAdminById,
 };

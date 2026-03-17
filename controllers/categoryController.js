@@ -3,12 +3,18 @@
 //   req.file.publicUrl  // full downloadable URL
 //   req.file.path       // GCS object path (e.g., "uploads/123.webp")
 
-const campaignModel = require("../model/campaignModel");
-const categoryModel = require("../model/categoryModel");
-const bannerModel = require("../model/bannerModel");
-const donationModel = require("../model/donationModel");
-const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
+const { findAdminById } = require("../services/supabaseAdminLoginService");
+const {
+  listCategories,
+  getCategory,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  listCampaigns,
+  deleteCampaignsByCategory,
+  deleteDonationsByCampaignIds,
+} = require("../services/supabaseContentService");
 
 // Firebase bucket (for deletes)
 const { bucket } = require("../config/firebaseAdmin");
@@ -49,6 +55,7 @@ const cleanupUploadedReqFile = async (file) => {
 };
 
 /* ---------------- Controllers ---------------- */
+const mapCategory = (c) => (c ? { ...c, _id: c.id } : null);
 
 // Load view for adding a category
 const loadAddCategory = async (req, res) => {
@@ -64,10 +71,10 @@ const loadAddCategory = async (req, res) => {
 // Add a new Category (expects single uploader on field "image")
 const addCategory = async (req, res) => {
   try {
-    const loginData = await adminLoginModel.findById(req.session.userId);
+    const loginData = await findAdminById(req.session.userId);
 
     // Demo admin: deny & cleanup any uploaded file
-    if (loginData && loginData.isAdmin === 0) {
+    if (loginData && Number(loginData.isAdmin ?? loginData.is_admin ?? 0) === 0) {
       await cleanupUploadedReqFile(req.file);
       req.flash(
         "error",
@@ -91,7 +98,7 @@ const addCategory = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "add-category");
     }
 
-    await new categoryModel({ name, image }).save();
+    await createCategory({ name, image });
     return res.redirect(process.env.BASE_URL + "category");
   } catch (error) {
     console.log(error.message);
@@ -105,8 +112,8 @@ const addCategory = async (req, res) => {
 const loadCategory = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
-      const category = await categoryModel.find();
-      const loginData = await adminLoginModel.find();
+      const category = (await listCategories()).map(mapCategory);
+      const loginData = res.locals.admin ? [res.locals.admin] : [];
 
       // IMAGE_URL blank; views should resolve absolute Firebase URLs directly
       return res.render("category", { category, loginData, IMAGE_URL: "" });
@@ -122,7 +129,7 @@ const loadCategory = async (req, res) => {
 const loadEditCategory = async (req, res) => {
   try {
     const id = req.query.id;
-    const category = await categoryModel.findById(id);
+    const category = mapCategory(await getCategory(id));
     return res.render("editCategory", { category, IMAGE_URL: "" });
   } catch (error) {
     console.log(error.message);
@@ -149,11 +156,7 @@ const editCategory = async (req, res) => {
       image = req.file.publicUrl;
     }
 
-    await categoryModel.findOneAndUpdate(
-      { _id: id },
-      { $set: { name, image } },
-      { new: true }
-    );
+    await updateCategory(id, { name, image });
 
     return res.redirect(process.env.BASE_URL + "category");
   } catch (error) {
@@ -164,52 +167,44 @@ const editCategory = async (req, res) => {
 };
 
 // Delete a category (and related media in Firebase)
-const deleteCategory = async (req, res) => {
+const deleteCategoryController = async (req, res) => {
   try {
     const id = req.query.id;
 
-    // Fetch campaigns in this category
-    const campaigns = await campaignModel.find({ categoryId: id });
+    const category = await getCategory(id);
+    if (!category) {
+      req.flash("error", "Category not found.");
+      return res.redirect(process.env.BASE_URL + "category");
+    }
 
-    // Delete each campaign's images (main, organizer, gallery)
+    // Fetch campaigns in this category
+    const campaigns = await listCampaigns({ categoryId: id });
+    const campaignIds = campaigns.map((c) => c.id);
+
+    // Delete associated media
     if (campaigns?.length) {
       const mediaJobs = [];
       for (const c of campaigns) {
         mediaJobs.push(deleteFromFirebaseByUrlOrPath(c.image));
         mediaJobs.push(deleteFromFirebaseByUrlOrPath(c.organizer_image));
         if (Array.isArray(c.gallery)) {
-          for (const g of c.gallery)
-            mediaJobs.push(deleteFromFirebaseByUrlOrPath(g));
+          for (const g of c.gallery) mediaJobs.push(deleteFromFirebaseByUrlOrPath(g));
         }
       }
       await Promise.allSettled(mediaJobs);
     }
 
-    // Banners tied to those campaigns
-    const campaignIds = campaigns.map((c) => c._id);
-    const banners = campaignIds.length
-      ? await bannerModel.find({ campaignId: { $in: campaignIds } })
-      : [];
-
-    if (banners?.length) {
-      await Promise.allSettled(
-        banners.map((b) => deleteFromFirebaseByUrlOrPath(b.image))
-      );
-    }
-
     // Delete category image itself
-    const categoryDoc = await categoryModel.findById(id);
-    if (categoryDoc?.image) {
-      await deleteFromFirebaseByUrlOrPath(categoryDoc.image);
+    if (category.image) {
+      await deleteFromFirebaseByUrlOrPath(category.image);
     }
 
-    // Remove DB docs in the right order
+    // Remove DB docs in order: donations -> campaigns -> category
     if (campaignIds.length) {
-      await bannerModel.deleteMany({ campaignId: { $in: campaignIds } });
-      await donationModel.deleteMany({ campaignId: { $in: campaignIds } });
-      await campaignModel.deleteMany({ categoryId: id });
+      await deleteDonationsByCampaignIds(campaignIds);
+      await deleteCampaignsByCategory(id);
     }
-    await categoryModel.deleteOne({ _id: id });
+    await deleteCategory(id);
 
     return res.redirect(process.env.BASE_URL + "category");
   } catch (error) {
@@ -228,23 +223,13 @@ const updateCategoryStatus = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "category");
     }
 
-    await categoryModel.findByIdAndUpdate(
-      id,
-      [
-        {
-          $set: {
-            status: {
-              $cond: {
-                if: { $eq: ["$status", "Publish"] },
-                then: "UnPublish",
-                else: "Publish",
-              },
-            },
-          },
-        },
-      ],
-      { new: true }
-    );
+    const category = await getCategory(id);
+    if (!category) {
+      req.flash("error", "Category not found.");
+      return res.redirect(process.env.BASE_URL + "category");
+    }
+    const nextStatus = category.status === "Publish" ? "UnPublish" : "Publish";
+    await updateCategory(id, { status: nextStatus });
 
     return res.redirect(process.env.BASE_URL + "category");
   } catch (error) {
@@ -260,6 +245,6 @@ module.exports = {
   loadCategory,
   loadEditCategory,
   editCategory,
-  deleteCategory,
+  deleteCategory: deleteCategoryController,
   updateCategoryStatus,
 };

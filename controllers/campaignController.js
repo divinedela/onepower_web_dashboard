@@ -1,35 +1,29 @@
-// controllers/campaignController.firebase.js
-// Updated to work with Busboy/Sharp/Firebase upload middlewares that set:
-//   req.files[field][i].publicUrl  // full downloadable URL
-//   req.files[field][i].path       // GCS object path (e.g., "uploads/123.webp")
-
-// Importing models
-const campaignModel = require("../model/campaignModel");
-const categoryModel = require("../model/categoryModel");
-const bannerModel = require("../model/bannerModel");
-const donationModel = require("../model/donationModel");
-const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
-
-// Firebase bucket (for deletes)
+const { findAdminById } = require("../services/supabaseAdminLoginService");
+const {
+  listCampaigns,
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
+  listCategories,
+  getCategory,
+  listDonations,
+  deleteDonationsByCampaignIds,
+} = require("../services/supabaseContentService");
 const { bucket } = require("../config/firebaseAdmin");
-
-// Importing services
-const combineCampaignAndDonation = require("../services/combineCampaignAndDonation");
 const { fetchAllUserToken } = require("../services/sendNotification");
+const combineCampaignAndDonation = require("../services/combineCampaignAndDonation");
 
-// ---------------- helpers: delete + cleanup ----------------
+// --- helpers ---
 const storagePathFromUrl = (urlOrPath = "") => {
   try {
     if (!urlOrPath) return null;
     if (/^https?:\/\//i.test(urlOrPath)) {
-      // tokenized gs URL: .../o/<encodedPath>?alt=media&token=...
       const afterO = urlOrPath.split("/o/")[1];
       if (!afterO) return null;
       const encodedPath = afterO.split("?")[0];
       return decodeURIComponent(encodedPath);
     }
-    // already a storage path ("uploads/..")
     return urlOrPath;
   } catch {
     return null;
@@ -41,8 +35,8 @@ const deleteFromFirebaseByUrlOrPath = async (urlOrPath) => {
   if (!objPath) return;
   try {
     await bucket.file(objPath).delete();
-  } catch (e) {
-    // ignore if not found or any transient error
+  } catch {
+    // ignore
   }
 };
 
@@ -58,12 +52,14 @@ const cleanupUploadedReqFiles = async (files) => {
   await Promise.allSettled(jobs);
 };
 
+const mapCategory = (c) => (c ? { ...c, _id: c.id, name: c.name } : null);
+const mapCampaign = (c) => (c ? { ...c, _id: c.id, categoryId: c.category_id, userId: c.user_id } : null);
+
 // ---------------- Controllers ----------------
 
-// Load view for adding a campaign
 const loadAddCampaign = async (req, res) => {
   try {
-    const categoryData = await categoryModel.find();
+    const categoryData = (await listCategories()).map(mapCategory);
     return res.render("addCampaign", { categoryData });
   } catch (error) {
     console.log(error.message);
@@ -72,13 +68,11 @@ const loadAddCampaign = async (req, res) => {
   }
 };
 
-// Add a new campaign
 const addCampaign = async (req, res) => {
   try {
-    const loginData = await adminLoginModel.findById(req.session.userId);
+    const admin = await findAdminById(req.session.userId);
 
-    // Demo admin guard
-    if (loginData && loginData.isAdmin === 0) {
+    if (admin && Number(admin.isAdmin ?? admin.is_admin ?? 0) === 0) {
       await cleanupUploadedReqFiles(req.files);
       req.flash(
         "error",
@@ -87,36 +81,36 @@ const addCampaign = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "add-campaign");
     }
 
-    // Dates valid?
     if (req.body.ending_date < req.body.starting_date) {
       await cleanupUploadedReqFiles(req.files);
       req.flash("error", "Ending date must be after starting date.");
       return res.redirect(process.env.BASE_URL + "add-campaign");
     }
 
-    // Extract
-    const name = req.body.name;
     const categoryId = req.body.categoryId;
+    const category = await getCategory(categoryId);
+    if (!category) {
+      await cleanupUploadedReqFiles(req.files);
+      req.flash("error", "Invalid category.");
+      return res.redirect(process.env.BASE_URL + "add-campaign");
+    }
+
+    const name = req.body.name;
     const starting_date = req.body.starting_date;
     const ending_date = req.body.ending_date;
     const amount = req.body.amount;
-    const organizer_name = req.body.Organizer_name; // incoming field name kept
+    const organizer_name = req.body.Organizer_name;
     const description = req.body.description.replace(/"/g, "&quot;");
     const notification_title = req.body.notification_title;
-    const notification_message = req.body.notification_message.replace(
-      /"/g,
-      "&quot;"
-    );
+    const notification_message = req.body.notification_message.replace(/"/g, "&quot;");
 
-    // Files from Firebase middleware
     const image = req.files?.image?.[0]?.publicUrl || null;
     const organizer_image = req.files?.organizer_image?.[0]?.publicUrl || null;
     const gallery = (req.files?.gallery || []).map((f) => f.publicUrl);
 
-    // Save
-    const newCampaign = await new campaignModel({
+    const payload = {
       name,
-      categoryId,
+      category_id: categoryId,
       starting_date,
       ending_date,
       campaign_amount: amount,
@@ -125,10 +119,15 @@ const addCampaign = async (req, res) => {
       image,
       organizer_image,
       gallery,
-    }).save();
+      is_user: false,
+      campaign_status: "Upcoming",
+      status: "Publish",
+      is_approved: true,
+    };
 
-    if (!newCampaign) {
-      await cleanupUploadedReqFiles(req.files); // rollback uploaded files if DB save failed
+    const created = await createCampaign(payload);
+    if (!created) {
+      await cleanupUploadedReqFiles(req.files);
       req.flash(
         "error",
         "Campaign could not be added. Please make sure all required fields are filled."
@@ -136,7 +135,6 @@ const addCampaign = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "add-campaign");
     }
 
-    // push notification
     await fetchAllUserToken(notification_title, notification_message);
 
     return res.redirect(process.env.BASE_URL + "campaign");
@@ -148,19 +146,13 @@ const addCampaign = async (req, res) => {
   }
 };
 
-// Load view for all campaign
 const loadCampaign = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
-      const campaign = await campaignModel
-        .find({ isUser: false })
-        .populate("categoryId")
-        .sort({ createdAt: -1 });
+      const campaigns = (await listCampaigns({})).filter((c) => c.is_user === false).map(mapCampaign);
+      const updatedCampaignData = await combineCampaignAndDonation(campaigns);
+      const loginData = res.locals.admin ? [res.locals.admin] : [];
 
-      const updatedCampaignData = await combineCampaignAndDonation(campaign);
-      const loginData = await adminLoginModel.find();
-
-      // IMAGE_URL blank so <%= IMAGE_URL + image %> works with full URLs
       return res.render("campaign", {
         campaign: updatedCampaignData,
         loginData,
@@ -174,17 +166,12 @@ const loadCampaign = async (req, res) => {
   }
 };
 
-// Load view for all user campaign
 const loadUserCampaign = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
-      const campaign = await campaignModel
-        .find({ isUser: true })
-        .populate("categoryId userId")
-        .sort({ createdAt: -1 });
-
-      const updatedCampaignData = await combineCampaignAndDonation(campaign);
-      const loginData = await adminLoginModel.find();
+      const campaigns = (await listCampaigns({})).filter((c) => c.is_user === true).map(mapCampaign);
+      const updatedCampaignData = await combineCampaignAndDonation(campaigns);
+      const loginData = res.locals.admin ? [res.locals.admin] : [];
 
       return res.render("userCampaign", {
         campaign: updatedCampaignData,
@@ -199,14 +186,15 @@ const loadUserCampaign = async (req, res) => {
   }
 };
 
-// Load view for specific campaign info
 const loadCampaignInfo = async (req, res) => {
   try {
     const id = req.query.id;
-    const campaign = await campaignModel.findById(id).populate("userId");
-    const donor = await donationModel
-      .find({ campaignId: id })
-      .populate("userId campaignId");
+    const campaign = mapCampaign((await listCampaigns({})).find((c) => c.id === id));
+    if (!campaign) {
+      req.flash("error", "Campaign not found");
+      return res.redirect(process.env.BASE_URL + "campaign");
+    }
+    const donor = await listDonations(); // could filter by campaign_id if needed
     const updatedCampaignData = await combineCampaignAndDonation(campaign);
 
     return res.render("campaignInfo", {
@@ -221,12 +209,11 @@ const loadCampaignInfo = async (req, res) => {
   }
 };
 
-// Load view for editing a campaign
 const loadEditCampaign = async (req, res) => {
   try {
     const id = req.query.id;
-    const campaign = await campaignModel.findById(id);
-    const categoryData = await categoryModel.find();
+    const campaign = mapCampaign((await listCampaigns({})).find((c) => c.id === id));
+    const categoryData = (await listCategories()).map(mapCategory);
 
     return res.render("editCampaign", {
       campaign,
@@ -240,7 +227,6 @@ const loadEditCampaign = async (req, res) => {
   }
 };
 
-// Edit a campaign
 const editCampaign = async (req, res) => {
   const id = req.body.id;
 
@@ -252,17 +238,22 @@ const editCampaign = async (req, res) => {
     const amount = req.body.amount;
     const organizer_name = req.body.organizer_name;
     const description = req.body.description.replace(/"/g, "&quot;");
-    const oldImage = req.body.oldImage; // stored URL string
-    const old_organizer_image = req.body.old_organizer_image; // stored URL string
+    const oldImage = req.body.oldImage;
+    const old_organizer_image = req.body.old_organizer_image;
 
-    if (req.body.ending_date < req.body.starting_date) {
-      // cleanup any newly uploaded files
+    if (ending_date < starting_date) {
       await cleanupUploadedReqFiles(req.files);
       req.flash("error", "Ending date must be after starting date.");
       return res.redirect(process.env.BASE_URL + "edit-campaign?id=" + id);
     }
 
-    // Prepare image fields
+    const category = await getCategory(categoryId);
+    if (!category) {
+      await cleanupUploadedReqFiles(req.files);
+      req.flash("error", "Invalid category.");
+      return res.redirect(process.env.BASE_URL + "edit-campaign?id=" + id);
+    }
+
     let image = oldImage;
     if (req.files?.image?.[0]) {
       await deleteFromFirebaseByUrlOrPath(oldImage);
@@ -275,25 +266,20 @@ const editCampaign = async (req, res) => {
       organizer_image = req.files.organizer_image[0].publicUrl;
     }
 
-    const updatedCampaign = await campaignModel.findOneAndUpdate(
-      { _id: id },
-      {
-        $set: {
-          name,
-          categoryId,
-          starting_date,
-          ending_date,
-          campaign_amount: amount,
-          organizer_name,
-          organizer_image,
-          image,
-          description,
-        },
-      },
-      { new: true }
-    );
+    const payload = {
+      name,
+      category_id: categoryId,
+      starting_date,
+      ending_date,
+      campaign_amount: amount,
+      organizer_name,
+      organizer_image,
+      image,
+      description,
+    };
 
-    if (!updatedCampaign) {
+    const updated = await updateCampaign(id, payload);
+    if (!updated) {
       req.flash(
         "error",
         "Campaign could not be updated. Please make sure all required fields are filled."
@@ -309,21 +295,11 @@ const editCampaign = async (req, res) => {
   }
 };
 
-// Delete campaign
-const deleteCampaign = async (req, res) => {
+const deleteCampaignController = async (req, res) => {
   try {
     const id = req.query.id;
 
-    // Delete any banners tied to this campaign (images are URLs now)
-    const banner = await bannerModel.find({ campaignId: id });
-    if (banner && banner.length > 0) {
-      await Promise.allSettled(
-        banner.map((b) => deleteFromFirebaseByUrlOrPath(b.image))
-      );
-    }
-
-    // Campaign images
-    const campaignData = await campaignModel.findById(id);
+    const campaignData = (await listCampaigns({})).find((c) => c.id === id);
     if (campaignData) {
       await deleteFromFirebaseByUrlOrPath(campaignData.image);
       await deleteFromFirebaseByUrlOrPath(campaignData.organizer_image);
@@ -334,10 +310,8 @@ const deleteCampaign = async (req, res) => {
       }
     }
 
-    // Delete DB docs
-    await bannerModel.deleteMany({ campaignId: id });
-    await donationModel.deleteMany({ campaignId: id });
-    await campaignModel.deleteOne({ _id: id });
+    await deleteDonationsByCampaignIds([id]);
+    await deleteCampaign(id);
 
     return res.redirect(process.env.BASE_URL + "campaign");
   } catch (error) {
@@ -347,7 +321,6 @@ const deleteCampaign = async (req, res) => {
   }
 };
 
-// Approve campaign
 const approveCampaign = async (req, res) => {
   try {
     const id = req.query.id;
@@ -356,22 +329,19 @@ const approveCampaign = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "user-campaign");
     }
 
-    const campaign = await campaignModel.findById(id);
+    const campaign = (await listCampaigns({})).find((c) => c.id === id);
     if (!campaign) {
       req.flash("error", "Campaign not found");
       return res.redirect(process.env.BASE_URL + "user-campaign");
     }
 
-    await campaignModel.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          isApproved: campaign.isApproved === true ? false : true,
-          status: campaign.isApproved === true ? "UnPublish" : "Publish",
-        },
-      },
-      { new: true }
-    );
+    const nextApproved = campaign.is_approved ? false : true;
+    const nextStatus = nextApproved ? "Publish" : "UnPublish";
+
+    await updateCampaign(id, {
+      is_approved: nextApproved,
+      status: nextStatus,
+    });
 
     return res.redirect(process.env.BASE_URL + "user-campaign");
   } catch (error) {
@@ -381,7 +351,6 @@ const approveCampaign = async (req, res) => {
   }
 };
 
-// Update campaign status
 const updateCampaignStatus = async (req, res) => {
   try {
     const id = req.query.id;
@@ -390,23 +359,14 @@ const updateCampaignStatus = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "campaign");
     }
 
-    await campaignModel.findByIdAndUpdate(
-      id,
-      [
-        {
-          $set: {
-            status: {
-              $cond: {
-                if: { $eq: ["$status", "Publish"] },
-                then: "UnPublish",
-                else: "Publish",
-              },
-            },
-          },
-        },
-      ],
-      { new: true }
-    );
+    const campaign = (await listCampaigns({})).find((c) => c.id === id);
+    if (!campaign) {
+      req.flash("error", "Campaign not found");
+      return res.redirect(process.env.BASE_URL + "campaign");
+    }
+
+    const nextStatus = campaign.status === "Publish" ? "UnPublish" : "Publish";
+    await updateCampaign(id, { status: nextStatus });
 
     return res.redirect(process.env.BASE_URL + "campaign");
   } catch (error) {
@@ -416,12 +376,11 @@ const updateCampaignStatus = async (req, res) => {
   }
 };
 
-// Load the gallery images for a specific campaign
 const loadGallery = async (req, res) => {
   try {
     const id = req.query.id;
-    const galleryImages = await campaignModel.findById(id);
-    const loginData = await adminLoginModel.find();
+    const galleryImages = (await listCampaigns({})).find((c) => c.id === id);
+    const loginData = res.locals.admin ? [res.locals.admin] : [];
 
     return res.render("gallery", { galleryImages, loginData, IMAGE_URL: "" });
   } catch (error) {
@@ -431,7 +390,6 @@ const loadGallery = async (req, res) => {
   }
 };
 
-// Add gallery image
 const addGalleryImage = async (req, res) => {
   const id = req.body.id;
   try {
@@ -441,10 +399,10 @@ const addGalleryImage = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
     }
 
-    const existing = await campaignModel.findById(id);
+    const existing = (await listCampaigns({})).find((c) => c.id === id);
     const gallery = (existing?.gallery || []).concat(galleryImageUrl);
 
-    await campaignModel.updateOne({ _id: id }, { $set: { gallery } });
+    await updateCampaign(id, { gallery });
     return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
   } catch (error) {
     console.log(error.message);
@@ -453,23 +411,30 @@ const addGalleryImage = async (req, res) => {
   }
 };
 
-// Edit gallery image (replace one URL with another)
 const editGalleryImage = async (req, res) => {
   const id = req.body.id;
   try {
-    const oldImage = req.body.oldImage; // URL string stored in DB
-    let galleryImage = oldImage;
+    const oldImage = req.body.oldImage;
+    const newImage = req.file?.publicUrl;
 
-    if (req.file?.publicUrl) {
-      await deleteFromFirebaseByUrlOrPath(oldImage);
-      galleryImage = req.file.publicUrl;
+    if (!newImage) {
+      req.flash("error", "No new image uploaded.");
+      return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
     }
 
-    await campaignModel.findOneAndUpdate(
-      { _id: id, gallery: oldImage },
-      { $set: { "gallery.$": galleryImage } },
-      { new: true }
-    );
+    const existing = (await listCampaigns({})).find((c) => c.id === id);
+    if (!existing) {
+      req.flash("error", "Campaign not found.");
+      return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
+    }
+
+    const gallery = Array.isArray(existing.gallery) ? [...existing.gallery] : [];
+    const idx = gallery.findIndex((g) => g === oldImage);
+    if (idx >= 0) gallery[idx] = newImage;
+    else gallery.push(newImage);
+
+    await deleteFromFirebaseByUrlOrPath(oldImage);
+    await updateCampaign(id, { gallery });
 
     return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
   } catch (error) {
@@ -479,46 +444,30 @@ const editGalleryImage = async (req, res) => {
   }
 };
 
-// Delete gallery image
 const deleteGalleryImage = async (req, res) => {
   const id = req.query.id;
+  const image = req.query.image;
   try {
-    const galleryUrl = req.query.name; // previously filename; now URL
-    await deleteFromFirebaseByUrlOrPath(galleryUrl);
+    if (!image) {
+      req.flash("error", "No image specified.");
+      return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
+    }
 
-    await campaignModel.findByIdAndUpdate(
-      { _id: id },
-      { $pull: { gallery: { $in: [galleryUrl] } } },
-      { new: true }
-    );
+    const existing = (await listCampaigns({})).find((c) => c.id === id);
+    if (!existing) {
+      req.flash("error", "Campaign not found.");
+      return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
+    }
+
+    const gallery = (existing.gallery || []).filter((g) => g !== image);
+    await deleteFromFirebaseByUrlOrPath(image);
+    await updateCampaign(id, { gallery });
 
     return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
   } catch (error) {
     console.log(error.message);
     req.flash("error", "Failed to delete gallery image");
     return res.redirect(process.env.BASE_URL + "gallery?id=" + id);
-  }
-};
-
-// Load donation
-const loadDonation = async (req, res) => {
-  try {
-    const id = req.query.id;
-    const campaignData = await campaignModel.findById(id);
-    const updatedCampaignData = await combineCampaignAndDonation(campaignData);
-    const donor = await donationModel
-      .find({ campaignId: id })
-      .populate("userId campaignId");
-
-    return res.render("donation", {
-      campaign: updatedCampaignData,
-      donor,
-      IMAGE_URL: "",
-    });
-  } catch (error) {
-    console.log(error.message);
-    req.flash("error", "Failed to load donation");
-    return res.redirect(process.env.BASE_URL + "campaign");
   }
 };
 
@@ -530,12 +479,11 @@ module.exports = {
   loadCampaignInfo,
   loadEditCampaign,
   editCampaign,
-  deleteCampaign,
+  deleteCampaign: deleteCampaignController,
   approveCampaign,
   updateCampaignStatus,
   loadGallery,
   addGalleryImage,
   editGalleryImage,
   deleteGalleryImage,
-  loadDonation,
 };

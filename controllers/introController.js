@@ -1,5 +1,3 @@
-const loginModel = require("../model/adminLoginModel");
-const introModel = require("../model/introModel");
 const { verifyAdminAccess } = require("../config/verification");
 const { findAdminById } = require("../services/supabaseAdminLoginService");
 const {
@@ -12,9 +10,6 @@ const {
 } = require("../services/supabaseIntroService");
 const deleteImage = require("../services/deleteImage");
 
-const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
-const isSupabaseDataProvider = dataProvider === "supabase";
-
 function isSuperAdmin(admin) {
   return Number(admin?.isAdmin ?? admin?.is_admin ?? 0) === 1;
 }
@@ -22,10 +17,7 @@ function isSuperAdmin(admin) {
 async function getCurrentAdmin(req) {
   const adminId = req.session?.userId;
   if (!adminId) return null;
-  if (isSupabaseDataProvider) {
-    return findAdminById(adminId);
-  }
-  return loginModel.findById(adminId);
+  return findAdminById(adminId);
 }
 
 async function guardIntroWriteAccess(req, res, redirectPath) {
@@ -81,11 +73,7 @@ const addIntro = async (req, res) => {
       description: req.body.description,
     };
 
-    if (isSupabaseDataProvider) {
-      await createIntro(payload);
-    } else {
-      await new introModel(payload).save();
-    }
+    await createIntro(payload);
 
     return res.redirect(process.env.BASE_URL + "intro");
   } catch (error) {
@@ -98,13 +86,8 @@ const addIntro = async (req, res) => {
 const loadIntro = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
-      const intro = isSupabaseDataProvider
-        ? await listIntros()
-        : await introModel.find();
-
-      const loginData = isSupabaseDataProvider
-        ? (res.locals.admin ? [res.locals.admin] : [])
-        : await loginModel.find();
+      const intro = await listIntros();
+      const loginData = res.locals.admin ? [res.locals.admin] : [];
 
       return res.render("intro", {
         intro,
@@ -127,9 +110,7 @@ const loadEditIntro = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "intro");
     }
 
-    const intro = isSupabaseDataProvider
-      ? await getIntroById(id)
-      : await introModel.findOne({ _id: id });
+    const intro = await getIntroById(id);
 
     if (!intro) {
       req.flash("error", "Intro not found.");
@@ -169,14 +150,7 @@ const editIntro = async (req, res) => {
       image = req.file.filename;
     }
 
-    if (isSupabaseDataProvider) {
-      await updateIntroById(id, { title, description, image });
-    } else {
-      await introModel.findOneAndUpdate(
-        { _id: id },
-        { $set: { title, description, image } }
-      );
-    }
+    await updateIntroById(id, { title, description, image });
 
     return res.redirect(process.env.BASE_URL + "intro");
   } catch (error) {
@@ -212,11 +186,7 @@ const deleteIntro = async (req, res) => {
 
     if (intro.image) deleteImage(intro.image);
 
-    if (isSupabaseDataProvider) {
-      await deleteIntroById(id);
-    } else {
-      await introModel.deleteOne({ _id: id });
-    }
+    await deleteIntroById(id);
 
     return res.redirect(process.env.BASE_URL + "intro");
   } catch (error) {
@@ -241,29 +211,9 @@ const updateIntroStatus = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "intro");
     }
 
-    if (isSupabaseDataProvider) {
-      const updated = await toggleIntroStatus(id);
-      if (!updated) {
-        req.flash("error", "Intro not found.");
-      }
-    } else {
-      await introModel.findByIdAndUpdate(
-        id,
-        [
-          {
-            $set: {
-              status: {
-                $cond: {
-                  if: { $eq: ["$status", "Publish"] },
-                  then: "UnPublish",
-                  else: "Publish",
-                },
-              },
-            },
-          },
-        ],
-        { new: true }
-      );
+    const updated = await toggleIntroStatus(id);
+    if (!updated) {
+      req.flash("error", "Intro not found.");
     }
 
     return res.redirect(process.env.BASE_URL + "intro");

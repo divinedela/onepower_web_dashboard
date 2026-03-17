@@ -1,8 +1,9 @@
 const { admin } = require("../config/firebaseAdmin");
 
-// Importing models
-const userNotificationModel = require("../model/userNotificationModel");
-const notificationModel = require("../model/notificationModel");
+const {
+  listUserDevices,
+  createNotification,
+} = require("../services/supabaseContentService");
 
 const INVALID_TOKEN_ERRORS = new Set([
   "messaging/invalid-registration-token",
@@ -20,22 +21,19 @@ const chunk = (arr, size) => {
 // fetch all user toekn
 async function fetchAllUserToken(title, message) {
   try {
-    const userToken = await userNotificationModel.find(
-      { registrationToken: { $exists: true, $ne: "" } },
-      { registrationToken: 1 }
-    );
+    const userTokenRows = await listUserDevices();
 
     // Save notification to database even when there are no valid tokens.
-    await new notificationModel({
+    await createNotification({
       recipient: "User",
       title: title,
       message: message,
-    }).save();
+    });
 
     const registrationTokens = [
       ...new Set(
-        userToken
-          .map((token) => token.registrationToken?.trim())
+        (userTokenRows || [])
+          .map((row) => row.registration_token?.trim())
           .filter(Boolean)
       ),
     ];
@@ -91,11 +89,7 @@ async function sendPushNotification(registrationTokens, title, message) {
       });
     }
 
-    if (invalidTokens.size > 0) {
-      await userNotificationModel.deleteMany({
-        registrationToken: { $in: [...invalidTokens] },
-      });
-    }
+    // TODO: prune invalid tokens in Supabase (requires device PK or delete helper).
 
     console.log("Notifications send summary:", {
       totalTokens: registrationTokens.length,

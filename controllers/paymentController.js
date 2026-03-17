@@ -1,7 +1,11 @@
-// ===== Paystack integration (keep Stripe/PayPal code above/below) =====
+// Paystack integration using Supabase for donation storage
 const axios = require("axios");
 const crypto = require("crypto");
-const donationModel = require("../model/donationModel");
+const {
+  insertDonation,
+  getDonationByReference,
+  updateDonationByReference,
+} = require("../services/supabaseContentService");
 
 let appLogger = null;
 try {
@@ -34,85 +38,49 @@ const ps = axios.create({
 
 // helper
 const nowIsoDate = () => new Date().toISOString().split("T")[0];
-const toUserIdString = (user) => {
-  if (!user) return "";
-  if (typeof user === "string") return user;
-  if (typeof user === "object" && user._id) return String(user._id);
-  return String(user);
+
+// Paystack return bounce (kept)
+const paystackReturn = async (req, res) => {
+  try {
+    const { reference, status } = req.query;
+    const deepLink = `onepower://paystack/callback?reference=${encodeURIComponent(
+      reference || ""
+    )}&status=${encodeURIComponent(status || "")}`;
+    return res.redirect(deepLink);
+  } catch (e) {
+    console.error("paystackReturn error", e.message);
+    return res.status(200).send("You can close this window now.");
+  }
 };
 
-// 1) Initialize transaction  -------------------------------------------
-/**
- * POST /payments/paystack/create
- * body: { campaignId, amountMajor:number, currency:string, email:string }
- * output: { reference, authorizationUrl }
- *
- * Idempotency: if a Pending donation exists for (userId,campaignId,amount,currency) within 2m, return same reference.
- */
+const test = async (_req, res) => {
+  res.json({ test: "working" });
+};
+
+// --------- Paystack: Initialize (creates Pending donation in Supabase) ----------
 const paystackCreate = async (req, res) => {
   try {
-    const userId = toUserIdString(req.user);
+    const userId = String(req.user?.id || req.user?._id || "");
     const { campaignId, amountMajor, currency = "GHS", email } = req.body;
     const normalizedCurrency = String(currency || "GHS").toUpperCase();
     const amountMajorNum = Number(amountMajor);
 
-    if (
-      !campaignId ||
-      !email ||
-      !userId ||
-      !amountMajorNum ||
-      Number.isNaN(amountMajorNum) ||
-      amountMajorNum <= 0
-    ) {
+    if (!campaignId || !email || !userId || !amountMajorNum || amountMajorNum <= 0) {
       return res.json({
         data: { success: 0, message: "Missing required fields", error: 1 },
       });
     }
 
-    // Idempotency window = 2 minutes
-    const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000);
-    const existing = await donationModel.findOne({
-      userId,
-      campaignId,
-      amount: amountMajorNum,
-      currency: normalizedCurrency,
-      payment_method: "Paystack",
-      payment_status: "Pending",
-      createdAt: { $gte: twoMinAgo },
-    });
-
-    if (existing?.transaction_id && existing?.authorization_url) {
-      return res.json({
-        data: {
-          success: 1,
-          message: "Reusing pending Paystack transaction",
-          reference: existing.transaction_id,
-          authorizationUrl: existing.authorization_url,
-          error: 0,
-        },
-      });
-    }
-
-    const reference = `PS_${campaignId}_${Date.now()}_${Math.floor(
-      Math.random() * 9e6 + 1e6
-    )}`;
-
-    // Build return URL (Paystack-hosted page will bounce here; you redirect to app deep link)
     if (!PUBLIC_HOST) {
       return res.json({
-        data: {
-          success: 0,
-          message: "Payment callback host is not configured",
-          error: 1,
-        },
+        data: { success: 0, message: "Payment callback host not configured", error: 1 },
       });
     }
-    const callback_url = `${PUBLIC_HOST}/payments/paystack/return`;
 
-    // Convert to kobo
+    const reference = `PS_${campaignId}_${Date.now()}_${Math.floor(Math.random() * 9e6 + 1e6)}`;
+    const callback_url = `${PUBLIC_HOST}/payments/paystack/return`;
     const amountKobo = Math.round(amountMajorNum * 100);
 
-    // Initialize at Paystack
     const initPayload = {
       email,
       amount: amountKobo,
@@ -126,18 +94,13 @@ const paystackCreate = async (req, res) => {
     const data = resp?.data?.data;
     if (!data?.authorization_url) {
       return res.json({
-        data: {
-          success: 0,
-          message: "Failed to create Paystack transaction",
-          error: 1,
-        },
+        data: { success: 0, message: "Failed to create Paystack transaction", error: 1 },
       });
     }
 
-    // Create PENDING donation row now
-    await donationModel.create({
-      userId,
-      campaignId,
+    await insertDonation({
+      user_id: userId,
+      campaign_id: campaignId,
       amount: amountMajorNum,
       currency: normalizedCurrency,
       date: nowIsoDate(),
@@ -164,33 +127,10 @@ const paystackCreate = async (req, res) => {
   }
 };
 
-// 2) Return (browser bounce) --------------------------------------------
-const paystackReturn = async (req, res) => {
-  try {
-    const { reference, status } = req.query;
-    const deepLink = `onepower://paystack/callback?reference=${encodeURIComponent(
-      reference || ""
-    )}&status=${encodeURIComponent(status || "")}`;
-    return res.redirect(deepLink);
-  } catch (e) {
-    console.error("paystackReturn error", e.message);
-    return res.status(200).send("You can close this window now.");
-  }
-};
-
-const test = async (req, res) => {
-  res.json({ test: "working" });
-};
-
-// 3) Verify transaction --------------------------------------------------
-/**
- * POST /payments/paystack/verify
- * body: { reference }
- * idempotent: returns existing final state if already finalized
- */
+// --------- Paystack: Verify (idempotent) ----------
 const paystackVerify = async (req, res) => {
   try {
-    const requesterUserId = toUserIdString(req.user);
+    const requesterUserId = String(req.user?.id || req.user?._id || "");
     const { reference } = req.body;
     if (!reference) {
       return res.json({
@@ -203,8 +143,7 @@ const paystackVerify = async (req, res) => {
       });
     }
 
-    // Fetch our pending/recorded donation
-    const donation = await donationModel.findOne({ transaction_id: reference });
+    const donation = await getDonationByReference(reference);
     if (!donation) {
       return res.json({
         data: {
@@ -216,7 +155,7 @@ const paystackVerify = async (req, res) => {
       });
     }
 
-    if (String(donation.userId) !== requesterUserId) {
+    if (String(donation.user_id) !== requesterUserId) {
       return res.json({
         data: {
           success: 0,
@@ -227,14 +166,12 @@ const paystackVerify = async (req, res) => {
       });
     }
 
-    // If already finalized, return the current state (idempotent)
     if (donation.payment_status !== "Pending") {
       return res.json({
         data: {
           success: 1,
           message: "Already verified",
-          status:
-            donation.payment_status === "Successful" ? "success" : "failed",
+          status: donation.payment_status === "Successful" ? "success" : "failed",
           amount: donation.amount * 100,
           currency: donation.currency,
           error: 0,
@@ -242,22 +179,13 @@ const paystackVerify = async (req, res) => {
       });
     }
 
-    // Query Paystack
-    const ver = await ps.get(
-      `/transaction/verify/${encodeURIComponent(reference)}`
-    );
+    const ver = await ps.get(`/transaction/verify/${encodeURIComponent(reference)}`);
     const d = ver?.data?.data;
-    console.log("verofied data", JSON.stringify(d));
     if (!d) {
-      await donationModel.updateOne(
-        { _id: donation._id },
-        {
-          $set: {
-            payment_status: "Failed",
-            failure_reason: "Verification: empty response",
-          },
-        }
-      );
+      await updateDonationByReference(reference, {
+        payment_status: "Failed",
+        failure_reason: "Verification: empty response",
+      });
       return res.json({
         data: {
           success: 0,
@@ -268,31 +196,24 @@ const paystackVerify = async (req, res) => {
       });
     }
 
-    // Compare amounts/currency
-    const amountKobo = Math.round(donation.amount * 100);
+    const amountKobo = Math.round(Number(donation.amount) * 100);
     const amountMatches = Number(d.amount) === amountKobo;
     const currencyMatches =
-      (d.currency || "").toUpperCase() ===
-      (donation.currency || "GHS").toUpperCase();
+      (d.currency || "").toUpperCase() === (donation.currency || "GHS").toUpperCase();
 
     let final = { payment_status: "Failed", failure_reason: "" };
     if ((d.status || "").toLowerCase() === "success" && amountMatches && currencyMatches) {
       final.payment_status = "Successful";
     } else {
       const reasons = [];
-      if ((d.status || "").toLowerCase() !== "success")
-        reasons.push(`ps_status=${d.status}`);
-      if (!amountMatches)
-        reasons.push(`amount_mismatch ps=${d.amount} our=${amountKobo}`);
-      if (!currencyMatches)
-        reasons.push(
-          `currency_mismatch ps=${d.currency} our=${donation.currency}`
-        );
+      if ((d.status || "").toLowerCase() !== "success") reasons.push(`ps_status=${d.status}`);
+      if (!amountMatches) reasons.push(`amount_mismatch ps=${d.amount} our=${amountKobo}`);
+      if (!currencyMatches) reasons.push(`currency_mismatch ps=${d.currency} our=${donation.currency}`);
       final.failure_reason = reasons.join("; ");
       if (!amountMatches || !currencyMatches) final.flagged = true;
     }
 
-    await donationModel.updateOne({ _id: donation._id }, { $set: final });
+    await updateDonationByReference(reference, final);
 
     return res.json({
       data: {
@@ -317,11 +238,7 @@ const paystackVerify = async (req, res) => {
   }
 };
 
-// 4) Webhook (idempotent; finalize server-side) -------------------------
-/**
- * POST /webhooks/paystack
- * header: x-paystack-signature
- */
+// --------- Paystack: Webhook (idempotent) ----------
 const paystackWebhook = async (req, res) => {
   const requestId = req.id || null;
   const t0 = Date.now();
@@ -330,16 +247,8 @@ const paystackWebhook = async (req, res) => {
     const sig = req.headers["x-paystack-signature"];
     const secret = PAYSTACK_WEBHOOK_SECRET || PAYSTACK_SECRET_KEY;
 
-    if (!secret) {
-      log("error", "Paystack: missing webhook secret", { requestId });
-      return res.status(200).json({ error: "Missing secret" });
-    }
-
-    if (!sig) {
-      log("warn", "Paystack: missing signature header", { requestId });
-      return res
-        .status(200)
-        .json({ error: "Paystack: missing signature header" });
+    if (!secret || !sig) {
+      return res.status(200).json({ error: "Missing secret or signature" });
     }
 
     const raw = Buffer.isBuffer(req.rawBody)
@@ -348,16 +257,11 @@ const paystackWebhook = async (req, res) => {
       ? req.body
       : Buffer.from(JSON.stringify(req.body || {}));
 
-    const computed = crypto
-      .createHmac("sha512", secret)
-      .update(raw)
-      .digest("hex");
+    const computed = crypto.createHmac("sha512", secret).update(raw).digest("hex");
     if (sig !== computed) {
-      log("warn", "Paystack: invalid signature", { requestId });
       return res.status(200).json({ error: "Invalid signature" });
     }
 
-    // Parse JSON only after signature passes
     let event = req.body;
     if (Buffer.isBuffer(event)) {
       event = JSON.parse(event.toString("utf8"));
@@ -369,59 +273,23 @@ const paystackWebhook = async (req, res) => {
     const tx = event?.data || {};
     const reference = tx?.reference || null;
 
-    console.log(
-      "info",
-      "Paystack webhook received",
-      JSON.stringify({
-        requestId,
-        type,
-        reference,
-      })
-    );
-
-    log("info", "Paystack webhook received", {
-      requestId,
-      type,
-      reference,
-    });
-
     if (!reference) {
-      log("warn", "Paystack: missing reference in payload", {
-        requestId,
-        type,
-      });
-      return res
-        .status(200)
-        .json({ error: "Paystack: missing reference in payload" });
+      return res.status(200).json({ error: "Missing reference" });
     }
 
-    const donation = await donationModel.findOne({ transaction_id: reference });
-
+    const donation = await getDonationByReference(reference);
     if (!donation) {
-      log("warn", "Paystack: unknown reference; ignoring", {
-        requestId,
-        reference,
-        type,
-      });
       return res.status(200).json({ error: "Unknown reference; ignored" });
     }
 
-    // Idempotency
     if (donation.payment_status !== "Pending") {
-      log("info", "Paystack: already finalized", {
-        requestId,
-        reference,
-        status: donation.payment_status,
-      });
       return res.status(200).json({ message: "Already processed" });
     }
 
-    // Validate amount/currency
     const amountKobo = Math.round(Number(donation.amount) * 100);
     const amountMatches = Number(tx.amount) === amountKobo;
     const currencyMatches =
-      (tx.currency || "").toUpperCase() ===
-      (donation.currency || "GHS").toUpperCase();
+      (tx.currency || "").toUpperCase() === (donation.currency || "GHS").toUpperCase();
 
     let final = { payment_status: "Failed", failure_reason: "" };
     if (type === "charge.success" && amountMatches && currencyMatches) {
@@ -429,19 +297,13 @@ const paystackWebhook = async (req, res) => {
     } else {
       const reasons = [];
       if (type !== "charge.success") reasons.push(`event=${type}`);
-      if (!amountMatches)
-        reasons.push(`amount_mismatch ps=${tx.amount} our=${amountKobo}`);
-      if (!currencyMatches)
-        reasons.push(
-          `currency_mismatch ps=${tx.currency} our=${donation.currency}`
-        );
+      if (!amountMatches) reasons.push(`amount_mismatch ps=${tx.amount} our=${amountKobo}`);
+      if (!currencyMatches) reasons.push(`currency_mismatch ps=${tx.currency} our=${donation.currency}`);
       final.failure_reason = reasons.join("; ");
       if (!amountMatches || !currencyMatches) final.flagged = true;
     }
 
-    await donationModel.updateOne({ _id: donation._id }, { $set: final });
-
-    console.log("info", "Paystack: donation updated", reference);
+    await updateDonationByReference(reference, final);
 
     log("info", "Paystack: donation updated", {
       requestId,
@@ -451,10 +313,8 @@ const paystackWebhook = async (req, res) => {
       flagged: final.flagged || false,
     });
 
-    // Always 200 to Paystack
     return res.status(200).end();
   } catch (e) {
-    // Never bubble errors to Paystack; just log and 200
     log("error", "Paystack webhook error", {
       requestId,
       err: e?.message || String(e),

@@ -26,18 +26,39 @@ function normalizeUser(row) {
   return {
     _id: row.id,
     id: row.id,
+    auth_user_id: row.auth_user_id || null,
     image: row.image || "",
     firstname: row.firstname,
     lastname: row.lastname,
     email: row.email,
     country_code: row.country_code,
     phone_number: row.phone_number,
-    password: row.password_hash,
     isVerified: !!row.is_verified,
     is_active: !!row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function isMissingAuthUserIdColumnError(error) {
+  const data = error?.response?.data || {};
+  const text = [
+    String(error?.message || ""),
+    String(data?.message || ""),
+    String(data?.details || ""),
+    String(data?.hint || ""),
+    String(data?.code || ""),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    text.includes("auth_user_id") &&
+    (text.includes("column") ||
+      text.includes("schema cache") ||
+      text.includes("does not exist") ||
+      text.includes("pgrst"))
+  );
 }
 
 function normalizeEmail(email) {
@@ -54,6 +75,28 @@ async function findUserByEmail(email) {
     },
   });
   return normalizeUser(response.data?.[0]);
+}
+
+async function findUserByAuthUserId(authUserId) {
+  const authId = String(authUserId || "").trim();
+  if (!authId) return null;
+
+  const client = getSupabaseRestClient();
+  try {
+    const response = await client.get("/users", {
+      params: {
+        select: "*",
+        auth_user_id: `eq.${authId}`,
+        limit: 1,
+      },
+    });
+    return normalizeUser(response.data?.[0]);
+  } catch (error) {
+    if (isMissingAuthUserIdColumnError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 async function findUserById(id) {
@@ -74,28 +117,41 @@ async function createUser({
   email,
   countryCode,
   phoneNumber,
-  passwordHash,
+  authUserId,
 }) {
   const client = getSupabaseRestClient();
-  const response = await client.post(
-    "/users",
-    {
-      firstname,
-      lastname,
-      email: normalizeEmail(email),
-      country_code: countryCode,
-      phone_number: phoneNumber,
-      password_hash: passwordHash,
-      is_verified: false,
-      is_active: true,
+  const payload = {
+    firstname,
+    lastname,
+    email: normalizeEmail(email),
+    country_code: countryCode,
+    phone_number: phoneNumber,
+    auth_user_id: authUserId || null,
+    is_verified: false,
+    is_active: true,
+  };
+  const requestConfig = {
+    headers: {
+      Prefer: "return=representation",
     },
-    {
-      headers: {
-        Prefer: "return=representation",
-      },
+  };
+
+  try {
+    const response = await client.post("/users", payload, requestConfig);
+    return normalizeUser(response.data?.[0]);
+  } catch (error) {
+    if (!isMissingAuthUserIdColumnError(error)) {
+      throw error;
     }
-  );
-  return normalizeUser(response.data?.[0]);
+
+    const { auth_user_id, ...fallbackPayload } = payload;
+    const fallbackResponse = await client.post(
+      "/users",
+      fallbackPayload,
+      requestConfig
+    );
+    return normalizeUser(fallbackResponse.data?.[0]);
+  }
 }
 
 async function updateUserById(id, updates = {}) {
@@ -104,14 +160,14 @@ async function updateUserById(id, updates = {}) {
   if (updates.lastname !== undefined) payload.lastname = updates.lastname;
   if (updates.countryCode !== undefined) payload.country_code = updates.countryCode;
   if (updates.phoneNumber !== undefined) payload.phone_number = updates.phoneNumber;
-  if (updates.passwordHash !== undefined) payload.password_hash = updates.passwordHash;
   if (updates.email !== undefined) payload.email = normalizeEmail(updates.email);
+  if (updates.authUserId !== undefined) payload.auth_user_id = updates.authUserId;
   if (updates.image !== undefined) payload.image = updates.image;
   if (updates.isVerified !== undefined) payload.is_verified = !!updates.isVerified;
   if (updates.isActive !== undefined) payload.is_active = !!updates.isActive;
 
   const client = getSupabaseRestClient();
-  const response = await client.patch("/users", payload, {
+  const requestConfig = {
     params: {
       id: `eq.${id}`,
       select: "*",
@@ -120,114 +176,27 @@ async function updateUserById(id, updates = {}) {
     headers: {
       Prefer: "return=representation",
     },
-  });
-  return normalizeUser(response.data?.[0]);
-}
+  };
 
-async function findOtpByEmail(email) {
-  const client = getSupabaseRestClient();
-  const response = await client.get("/otps", {
-    params: {
-      select: "*",
-      email: `eq.${normalizeEmail(email)}`,
-      limit: 1,
-    },
-  });
-  return response.data?.[0] || null;
-}
-
-async function upsertOtp(email, otp) {
-  const client = getSupabaseRestClient();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-  const response = await client.post(
-    "/otps",
-    [
-      {
-        email: normalizeEmail(email),
-        otp: Number(otp),
-        expires_at: expiresAt,
-      },
-    ],
-    {
-      headers: {
-        Prefer: "resolution=merge-duplicates,return=representation",
-      },
+  try {
+    const response = await client.patch("/users", payload, requestConfig);
+    return normalizeUser(response.data?.[0]);
+  } catch (error) {
+    if (
+      !isMissingAuthUserIdColumnError(error) ||
+      !Object.prototype.hasOwnProperty.call(payload, "auth_user_id")
+    ) {
+      throw error;
     }
-  );
-  return response.data?.[0] || null;
-}
 
-async function deleteOtpByEmail(email) {
-  const client = getSupabaseRestClient();
-  await client.delete("/otps", {
-    params: {
-      email: `eq.${normalizeEmail(email)}`,
-    },
-  });
-}
-
-async function findForgotPasswordOtpByEmail(email) {
-  const client = getSupabaseRestClient();
-  const response = await client.get("/forgot_password_otps", {
-    params: {
-      select: "*",
-      email: `eq.${normalizeEmail(email)}`,
-      limit: 1,
-    },
-  });
-  return response.data?.[0] || null;
-}
-
-async function upsertForgotPasswordOtp(email, otp) {
-  const client = getSupabaseRestClient();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-  const response = await client.post(
-    "/forgot_password_otps",
-    [
-      {
-        email: normalizeEmail(email),
-        otp: Number(otp),
-        is_verified: false,
-        expires_at: expiresAt,
-      },
-    ],
-    {
-      headers: {
-        Prefer: "resolution=merge-duplicates,return=representation",
-      },
-    }
-  );
-
-  return response.data?.[0] || null;
-}
-
-async function markForgotPasswordOtpVerified(email) {
-  const client = getSupabaseRestClient();
-  const response = await client.patch(
-    "/forgot_password_otps",
-    { is_verified: true },
-    {
-      params: {
-        email: `eq.${normalizeEmail(email)}`,
-        select: "*",
-        limit: 1,
-      },
-      headers: {
-        Prefer: "return=representation",
-      },
-    }
-  );
-  return response.data?.[0] || null;
-}
-
-async function deleteForgotPasswordOtpByEmail(email) {
-  const client = getSupabaseRestClient();
-  await client.delete("/forgot_password_otps", {
-    params: {
-      email: `eq.${normalizeEmail(email)}`,
-    },
-  });
+    const { auth_user_id, ...fallbackPayload } = payload;
+    const fallbackResponse = await client.patch(
+      "/users",
+      fallbackPayload,
+      requestConfig
+    );
+    return normalizeUser(fallbackResponse.data?.[0]);
+  }
 }
 
 async function upsertUserNotificationDevice({
@@ -250,6 +219,9 @@ async function upsertUserNotificationDevice({
       },
     ],
     {
+      params: {
+        on_conflict: "user_id,device_id",
+      },
       headers: {
         Prefer: "resolution=merge-duplicates,return=minimal",
       },
@@ -277,16 +249,10 @@ async function deleteFavouriteCampaignsByUserId(userId) {
 
 module.exports = {
   findUserByEmail,
+  findUserByAuthUserId,
   findUserById,
   createUser,
   updateUserById,
-  findOtpByEmail,
-  upsertOtp,
-  deleteOtpByEmail,
-  findForgotPasswordOtpByEmail,
-  upsertForgotPasswordOtp,
-  markForgotPasswordOtpVerified,
-  deleteForgotPasswordOtpByEmail,
   upsertUserNotificationDevice,
   deleteUserNotificationDevicesByUserId,
   deleteFavouriteCampaignsByUserId,

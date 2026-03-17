@@ -1,19 +1,16 @@
-// controllers/bannerController.firebase.js
-// Works with Busboy/Sharp/Firebase upload middleware that sets:
-//   req.file.publicUrl              // full downloadable URL
-//   req.file.path OR firebaseStorage.path // GCS object path (e.g., "uploads/123.webp")
-
-// Models
-
-const bannerModel = require("../model/bannerModel");
-const newsModel = require("../model/newsModel");
-const adminLoginModel = require("../model/adminLoginModel");
 const { verifyAdminAccess } = require("../config/verification");
-
-// Firebase bucket (for deletes)
+const { findAdminById } = require("../services/supabaseAdminLoginService");
+const {
+  listBanners,
+  createBanner,
+  updateBanner,
+  deleteBanner,
+  listNews,
+  getNews,
+} = require("../services/supabaseContentService");
 const { bucket } = require("../config/firebaseAdmin");
 
-// ---------------- helpers: delete + cleanup -------
+// --- helpers: firebase deletes + uploads ---
 const storagePathFromUrl = (urlOrPath = "") => {
   try {
     if (!urlOrPath) return null;
@@ -34,7 +31,7 @@ const deleteFromFirebaseByUrlOrPath = async (urlOrPath) => {
   if (!objPath) return;
   try {
     await bucket.file(objPath).delete();
-  } catch (e) {
+  } catch {
     // ignore
   }
 };
@@ -45,16 +42,33 @@ const cleanupUploadedReqFile = async (file) => {
   if (p) await deleteFromFirebaseByUrlOrPath(p);
 };
 
-// Support .single('image') OR .fields([{name:'image'}])
 const getUploadedImageUrl = (req) =>
   req.files?.image?.[0]?.publicUrl || req.file?.publicUrl || null;
 
-// ---------------- Controllers ----------------
+// --- controllers ---
 
-// Load view for adding a Banner
+const mapNews = (n) =>
+  n
+    ? {
+        ...n,
+        _id: n.id,
+        title: n.title,
+        name: n.title,
+      }
+    : null;
+
+const mapBanner = (b) =>
+  b
+    ? {
+        ...b,
+        _id: b.id,
+        newsId: b.news ? { ...b.news, _id: b.news.id, title: b.news.title, name: b.news.title } : b.news_id,
+      }
+    : null;
+
 const loadAddBanner = async (req, res) => {
   try {
-    const newsData = await newsModel.find().sort({ createdAt: -1 });
+    const newsData = (await listNews()).map(mapNews);
     return res.render("addBanner", { newsData });
   } catch (error) {
     console.log(error.message);
@@ -63,15 +77,12 @@ const loadAddBanner = async (req, res) => {
   }
 };
 
-// Add a new Banner
 const addBanner = async (req, res) => {
   try {
-    const loginData = await adminLoginModel.findById(req.session.userId);
-    if (!(loginData && loginData.isAdmin === 1)) {
-      req.flash(
-        "error",
-        "You have no access to add banner. Only admin has access."
-      );
+    const admin = await findAdminById(req.session.userId);
+    if (!(admin && Number(admin.isAdmin ?? admin.is_admin ?? 0) === 1)) {
+      await cleanupUploadedReqFile(req.file);
+      req.flash("error", "You have no access to add banner. Only admin has access.");
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
@@ -79,33 +90,33 @@ const addBanner = async (req, res) => {
     const imageUrl = getUploadedImageUrl(req);
 
     if (!title || !newsId || !imageUrl) {
+      await cleanupUploadedReqFile(req.file);
       req.flash("error", "Please select news, title and upload an image.");
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
-    // validate news exists
-    const news = await newsModel.findById(newsId);
+    const news = await getNews(newsId);
     if (!news) {
+      await cleanupUploadedReqFile(req.file);
       req.flash("error", "Selected news not found.");
       return res.redirect(process.env.BASE_URL + "add-banner");
     }
 
-    await new bannerModel({ title, image: imageUrl, newsId }).save();
+    await createBanner({ title, image: imageUrl, news_id: newsId });
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
     console.log("addBanner error:", error.message);
+    await cleanupUploadedReqFile(req.file);
     req.flash("error", "Failed to add banner");
     return res.redirect(process.env.BASE_URL + "add-banner");
   }
 };
 
-// Load view for all Banners
 const loadBanner = async (req, res) => {
   try {
     await verifyAdminAccess(req, res, async () => {
-      const banner = await bannerModel.find().populate("newsId");
-      const loginData = await adminLoginModel.find();
-
+      const banner = (await listBanners({ includeNews: true })).map(mapBanner);
+      const loginData = res.locals.admin ? [res.locals.admin] : [];
       return res.render("banner", { banner, loginData, IMAGE_URL: "" });
     });
   } catch (error) {
@@ -115,13 +126,14 @@ const loadBanner = async (req, res) => {
   }
 };
 
-// Load view for editing a Banner
 const loadEditBanner = async (req, res) => {
   try {
     const id = req.query.id;
-    const newsData = await newsModel.find().sort({ createdAt: -1 });
-    const banner = await bannerModel.findById(id);
-
+    const banner =
+      (await listBanners({ includeNews: true }))
+        .map(mapBanner)
+        .find((b) => b._id === id) || null;
+    const newsData = (await listNews()).map(mapNews);
     return res.render("editBanner", { banner, IMAGE_URL: "", newsData });
   } catch (error) {
     console.log(error.message);
@@ -130,7 +142,6 @@ const loadEditBanner = async (req, res) => {
   }
 };
 
-// Edit a Banner
 const editBanner = async (req, res) => {
   const id = req.body.id;
   try {
@@ -143,8 +154,7 @@ const editBanner = async (req, res) => {
       return res.redirect(process.env.BASE_URL + "edit-banner?id=" + id);
     }
 
-    // validate news exists
-    const news = await newsModel.findById(newsId);
+    const news = await getNews(newsId);
     if (!news) {
       req.flash("error", "Selected news not found.");
       return res.redirect(process.env.BASE_URL + "edit-banner?id=" + id);
@@ -155,12 +165,7 @@ const editBanner = async (req, res) => {
       image = newUrl;
     }
 
-    await bannerModel.findOneAndUpdate(
-      { _id: id },
-      { $set: { title, image, newsId } },
-      { new: true }
-    );
-
+    await updateBanner(id, { title, image, news_id: newsId });
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
     console.log("editBanner error:", error.message);
@@ -169,13 +174,16 @@ const editBanner = async (req, res) => {
   }
 };
 
-// Delete a Banner
-const deleteBanner = async (req, res) => {
+const deleteBannerController = async (req, res) => {
   try {
     const id = req.query.id;
-    const doc = await bannerModel.findById(id);
-    if (doc?.image) await deleteFromFirebaseByUrlOrPath(doc.image);
-    await bannerModel.deleteOne({ _id: id });
+    const banner = (await listBanners()).find((b) => b.id === id) || null;
+    if (!banner) {
+      req.flash("error", "Banner not found.");
+      return res.redirect(process.env.BASE_URL + "banner");
+    }
+    if (banner.image) await deleteFromFirebaseByUrlOrPath(banner.image);
+    await deleteBanner(id);
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
     console.log(error.message);
@@ -184,7 +192,6 @@ const deleteBanner = async (req, res) => {
   }
 };
 
-// Update banner status
 const updateBannerStatus = async (req, res) => {
   try {
     const id = req.query.id;
@@ -192,21 +199,13 @@ const updateBannerStatus = async (req, res) => {
       req.flash("error", "Something went wrong. Please try again.");
       return res.redirect(process.env.BASE_URL + "banner");
     }
-
-    await bannerModel.findByIdAndUpdate(
-      id,
-      [
-        {
-          $set: {
-            status: {
-              $cond: [{ $eq: ["$status", "Publish"] }, "UnPublish", "Publish"],
-            },
-          },
-        },
-      ],
-      { new: true }
-    );
-
+    const banner = (await listBanners()).find((b) => b.id === id) || null;
+    if (!banner) {
+      req.flash("error", "Banner not found.");
+      return res.redirect(process.env.BASE_URL + "banner");
+    }
+    const nextStatus = banner.status === "Publish" ? "UnPublish" : "Publish";
+    await updateBanner(id, { status: nextStatus });
     return res.redirect(process.env.BASE_URL + "banner");
   } catch (error) {
     console.error(error.message);
@@ -218,30 +217,19 @@ const updateBannerStatus = async (req, res) => {
 // ------- PUBLIC API (for Flutter) -------
 const getAllBannerPublic = async (_req, res) => {
   try {
-    const banners = await bannerModel
-      .find({ status: "Publish" }, { status: 0 }) // exclude status from docs (optional)
-      .populate({
-        path: "newsId",
-        select: "_id image title description publishedAt status",
-      })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // keep only banners with a valid, published news
-    const filtered = banners.filter(
-      (b) => b.newsId && b.newsId.status === "Publish"
-    );
-
-    // optional: trim heavy description for the list payload
+    const banners = await listBanners({ includeNews: true });
+    const filtered = banners.filter((b) => b.status === "Publish" && b.news?.status === "Publish");
     const trimmed = filtered.map((b) => ({
       ...b,
-      newsId: {
-        ...b.newsId,
-        description:
-          typeof b.newsId.description === "string"
-            ? b.newsId.description.slice(0, 600) // keep first ~600 chars
-            : b.newsId.description,
-      },
+      news: b.news
+        ? {
+            ...b.news,
+            description:
+              typeof b.news.description === "string"
+                ? b.news.description.slice(0, 600)
+                : b.news.description,
+          }
+        : null,
     }));
 
     return res.json({
@@ -265,7 +253,7 @@ module.exports = {
   loadBanner,
   loadEditBanner,
   editBanner,
-  deleteBanner,
+  deleteBanner: deleteBannerController,
   updateBannerStatus,
   getAllBannerPublic,
 };

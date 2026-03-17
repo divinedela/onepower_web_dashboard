@@ -2,6 +2,7 @@ const REQUIRED_SUPABASE_ENV = [
   "SUPABASE_URL",
   "SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_AUTH_REDIRECT_URL",
 ];
 
 function maskValue(value) {
@@ -19,6 +20,7 @@ function getSupabaseEnvStatus(env = process.env) {
       SUPABASE_URL: env.SUPABASE_URL || "",
       SUPABASE_ANON_KEY: maskValue(env.SUPABASE_ANON_KEY || ""),
       SUPABASE_SERVICE_ROLE_KEY: maskValue(env.SUPABASE_SERVICE_ROLE_KEY || ""),
+      SUPABASE_AUTH_REDIRECT_URL: env.SUPABASE_AUTH_REDIRECT_URL || "",
     },
   };
 }

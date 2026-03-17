@@ -186,65 +186,17 @@
                           </td>
                           <td class="pe-0 text-dark fw-bolder"><%= users[i].email %> </td>
                           <td class="pe-0"><%= users[i].country_code %>&nbsp;&nbsp;<%= users[i].phone_number %></td>
-                          <% for (let j in loginData) { %>
-                            <% if (String(loginData[j]._id) === String(locals.admin._id)) { %>
-                            <% if (loginData[j].isAdmin === 1) { %>
-                            <td class="pe-0" data-bs-toggle="modal" data-bs-target="#kt_modal_change_status_user<%= i %>">
-                              <% if (users[i].is_active === true) { %>
+                          <td class="pe-0">
+                            <% if (users[i].is_active === true) { %>
                               <div class="badge badge-success">Active</div>
-                              <% } else { %>
-                              <div class="badge badge-danger">InActive</div>
-                              <% } %>
-                            </td>
-                            <% } else if (loginData[j].isAdmin === 0) { %>
-                            <td class="pe-0" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>active/inactive user</b>. As a <b>demo admin</b>, you can only view the content.">
-                              <% if (users[i].is_active === true) { %>
-                              <div class="badge badge-success">Active</div>
-                              <% } else { %>
-                              <div class="badge badge-danger">InActive</div>
-                              <% } %>
-                            </td>
+                            <% } else { %>
+                              <div class="badge badge-danger">Inactive</div>
                             <% } %>
-                            <% } %>
-                            <% } %>
+                          </td>
                         </tr>
                         <!-- end::tr -->
 
-                                    <!-- begin::Modal - Enable/Disable user  -->
-            <div class=" modal fade" id="kt_modal_change_status_user<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title fs-1" id="confirmLabel">Confirmation</h5>
-                    <!--begin::Close-->
-                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                    </div>
-                    <!--end::Close-->
-                  </div>
-
-                  <!-- begin::modal-body -->
-                  <div class="modal-body">
-                    <p class="message text-center fs-3 mb-0">
-                      Are you sure..!! you want to <%= users[i].is_active === true ? 'InActive' : 'Active' %> the user <b><%= users[i].firstname %> <%= users[i].lastname %></b> ...?
-                    </p>
-                  </div>
-                  <!-- end::modal-body -->
-
-                  <!-- begin::modal-footer -->
-                  <div class="modal-footer">
-                    <a href="<%= process.env.BASE_URL %>active-user?id=<%= users[i]._id %>">
-                      <button type="button" class="btn <%= users[i].is_active === true ? 'btn-danger' : 'btn-success' %>">
-                        <%= users[i].is_active === true ? 'InActive' : 'Active' %>
-                      </button>
-                    </a>
-                  </div>
-                  <!-- end::modal-footer -->
-
-                </div>
-              </div>
-            </div>
-            <!--end::Modal - Enable/Disable  user -->
+                        <!-- action modals removed in Supabase mode -->
 
                         <% } %>
                         <% } else { %>

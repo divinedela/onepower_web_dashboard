@@ -1,11 +1,23 @@
 // index.js
 require("dotenv").config();
-require("newrelic");
+// Optional New Relic (opt-in via ENABLE_NEW_RELIC=true)
+let newrelic = { noticeError: () => {} };
+const enableNewRelic =
+  String(process.env.ENABLE_NEW_RELIC || "").toLowerCase() === "true" &&
+  !!process.env.NEW_RELIC_LICENSE_KEY;
+if (enableNewRelic) {
+  try {
+    newrelic = require("newrelic");
+  } catch (e) {
+    console.warn("New Relic disabled (failed to load):", e.message);
+  }
+} else {
+  process.env.NEW_RELIC_ENABLED = "false";
+}
 
 const express = require("express");
 const bodyParser = require("body-parser");
 const session = require("express-session");
-const passport = require("passport");
 const flash = require("connect-flash");
 const path = require("path");
 
@@ -17,21 +29,20 @@ const {
   morganToWinston,
   addNrContext,
 } = require("./middleware/requestLogger");
+const { adminOriginGuard } = require("./middleware/adminOriginGuard");
 
-const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
-const isSupabaseDataProvider = dataProvider === "supabase";
+const isSupabaseDataProvider = true;
 const { logSupabaseEnvStatus } = require("./config/supabaseEnv");
-
-// DB connect (Mongo mode only)
-if (!isSupabaseDataProvider) {
-  require("./config/conn.js");
-}
 
 // flash helpers
 const flashmiddleware = require("./config/flash");
 
 // app
 const app = express();
+const isProduction = process.env.NODE_ENV === "production";
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
 
 // ---- logging & tracing ----
 app.use(requestId);
@@ -43,16 +54,15 @@ const sessionConfig = {
   secret: process.env.SESSION_SECRET_KEY || "onepower-dev-session-secret",
   resave: false,
   saveUninitialized: true,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 30 },
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 30,
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+  },
 };
 
 if (!isSupabaseDataProvider) {
-  const MongoStore = require("connect-mongo");
-  sessionConfig.store = MongoStore.create({
-    mongoUrl: process.env.DB_CONNECTION,
-    ttl: 3600,
-  });
-} else {
   logger.warn(
     "Running with DATA_PROVIDER=supabase. Only migrated admin routes are enabled; Mongo-backed modules remain disabled."
   );
@@ -79,26 +89,15 @@ app.use(
   })
 );
 
-// passport
-app.use(passport.initialize());
-app.use(passport.session());
-
 // static
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// routes
-if (!isSupabaseDataProvider) {
-  const adminRoutes = require("./routes/adminRoutes.js");
-  app.use(process.env.BASE_URL, adminRoutes);
+// routes (Supabase-only)
+const supabaseBootstrapRoutes = require("./routes/apiSupabaseBootstrapRoutes.js");
+app.use("/api", supabaseBootstrapRoutes);
 
-  const apiRoutes = require("./routes/apiRoutes.js");
-  app.use("/api", apiRoutes);
-} else {
-  const supabaseBootstrapRoutes = require("./routes/apiSupabaseBootstrapRoutes.js");
-  const adminRoutes = require("./routes/adminRoutes.js");
-  app.use(process.env.BASE_URL, adminRoutes);
-  app.use("/api", supabaseBootstrapRoutes);
-}
+const adminRoutes = require("./routes/adminRoutes.js");
+app.use(process.env.BASE_URL, adminOriginGuard, adminRoutes);
 
 // 404
 app.use((req, res) => {
@@ -139,10 +138,9 @@ app.use((err, req, res, next) => {
 
 // process-level safety
 process.on("unhandledRejection", (reason) => {
-  const newrelic = require("newrelic");
-  newrelic.noticeError(
-    reason instanceof Error ? reason : new Error(String(reason))
-  );
+  try {
+    newrelic.noticeError(reason instanceof Error ? reason : new Error(String(reason)));
+  } catch (_) {}
   logger.error("Unhandled Promise Rejection", {
     reason: reason instanceof Error ? reason.message : String(reason),
     stack: reason instanceof Error ? reason.stack : undefined,
@@ -150,16 +148,45 @@ process.on("unhandledRejection", (reason) => {
 });
 
 process.on("uncaughtException", (err) => {
-  const newrelic = require("newrelic");
-  newrelic.noticeError(err);
+  try {
+    newrelic.noticeError(err);
+  } catch (_) {}
   logger.error("Uncaught Exception", {
     err_message: err.message,
     stack: err.stack,
   });
+  // ensure visibility in console for crashes
+  console.error("Uncaught Exception", err);
   // consider graceful shutdown in production
 });
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log("Server is start", port);
-});
+const host = process.env.HOST || "0.0.0.0";
+let port = Number(process.env.PORT || 4000);
+let fallbackUsed = false;
+
+const startServer = (p) => {
+  const server = app.listen(p, host, () => {
+    console.log(`Server started on ${host}:${p}`);
+  });
+
+  server.on("error", (err) => {
+    logger.error("Server listen error", {
+      err_message: err.message,
+      stack: err.stack,
+      host,
+      port: p,
+    });
+
+    if (!fallbackUsed && (err.code === "EACCES" || err.code === "EADDRINUSE" || err.code === "EPERM")) {
+      fallbackUsed = true;
+      const fallbackPort = 0; // OS-assigned
+      logger.warn("Retrying server listen on ephemeral port", { host, previousPort: p });
+      startServer(fallbackPort);
+      return;
+    }
+
+    process.exit(1);
+  });
+};
+
+startServer(port);

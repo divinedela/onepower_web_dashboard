@@ -141,23 +141,10 @@
                                   : '-' %>
                               </td>
                               <td class="pe-0">
-                                <% if (isSuperAdmin) { %>
-                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_change_status_news_<%= i %>">
-                                    <% if (n.status === "Publish") { %>
-                                      <div class="badge badge-success">Publish</div>
-                                    <% } else { %>
-                                      <div class="badge badge-danger">UnPublish</div>
-                                    <% } %>
-                                  </a>
+                                <% if (n.status === "Publish") { %>
+                                  <div class="badge badge-success">Publish</div>
                                 <% } else { %>
-                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access"
-                                     data-message="You don't have permission to <b>publish/unpublish news</b>. As a <b>demo admin</b>, you can only view the content.">
-                                    <% if (n.status === "Publish") { %>
-                                      <div class="badge badge-success">Publish</div>
-                                    <% } else { %>
-                                      <div class="badge badge-danger">UnPublish</div>
-                                    <% } %>
-                                  </a>
+                                  <div class="badge badge-danger">UnPublish</div>
                                 <% } %>
                               </td>
                               <td class="pe-0">
@@ -200,66 +187,69 @@
                               </td>
                             </tr>
 
-                            <!-- Modal: Change Status -->
-                            <div class="modal fade" id="kt_modal_change_status_news_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                              <div class="modal-dialog" role="document">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title fs-1">Confirmation</h5>
-                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                    </div>
-                                  </div>
-                                  <div class="modal-body">
-                                    <p class="message text-center fs-3 mb-0">
-                                      Are you sure you want to <%= n.status === "Publish" ? "unpublish" : "publish" %> the news <b><%= n.title %></b>?
-                                    </p>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <a href="<%= process.env.BASE_URL %>news-status?id=<%= n._id %>">
-                                      <button type="button" class="btn <%= n.status === "Publish" ? "btn-danger" : "btn-success" %>">
-                                        <%= n.status === "Publish" ? "UnPublish" : "Publish" %>
-                                      </button>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <!-- /Modal: Change Status -->
-
-                            <!-- Modal: Delete -->
-                            <div class="modal fade" id="kt_modal_delete_news_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                              <div class="modal-dialog">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title fs-2">Delete Confirmation</h5>
-                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                    </div>
-                                  </div>
-                                  <div class="modal-body">
-                                    <p class="text-center fs-3">Are you sure you want to delete the news <b><%= n.title %></b>?</p>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <a href="<%= process.env.BASE_URL %>delete-news?id=<%= n._id %>">
-                                      <button type="button" class="btn btn-danger">Delete</button>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <!-- /Modal: Delete -->
                           <% }) %>
-                        <% } else { %>
-                          <tr>
-                            <td colspan="6" class="text-center py-10">
-                              <span class="text-gray-600">No news records available.</span>
-                            </td>
-                          </tr>
                         <% } %>
                       </tbody>
                     </table>
                   </div>
+
+                  <% if (!news || news.length === 0) { %>
+                    <div class="alert alert-dismissible bg-light-secondary d-flex align-items-center mt-6">
+                      <span class="fs-6 text-gray-700 fw-semibold">No news records available.</span>
+                    </div>
+                  <% } else { %>
+                    <% news.forEach(function(n, i){ %>
+                      <!-- Modal: Change Status -->
+                      <div class="modal fade" id="kt_modal_change_status_news_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog" role="document">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title fs-1">Confirmation</h5>
+                              <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                              </div>
+                            </div>
+                            <div class="modal-body">
+                              <p class="message text-center fs-3 mb-0">
+                                Are you sure you want to <%= n.status === "Publish" ? "unpublish" : "publish" %> the news <b><%= n.title %></b>?
+                              </p>
+                            </div>
+                            <div class="modal-footer">
+                              <a href="<%= process.env.BASE_URL %>news-status?id=<%= n._id %>">
+                                <button type="button" class="btn <%= n.status === "Publish" ? "btn-danger" : "btn-success" %>">
+                                  <%= n.status === "Publish" ? "UnPublish" : "Publish" %>
+                                </button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- /Modal: Change Status -->
+
+                      <!-- Modal: Delete -->
+                      <div class="modal fade" id="kt_modal_delete_news_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title fs-2">Delete Confirmation</h5>
+                              <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                              </div>
+                            </div>
+                            <div class="modal-body">
+                              <p class="text-center fs-3">Are you sure you want to delete the news <b><%= n.title %></b>?</p>
+                            </div>
+                            <div class="modal-footer">
+                              <a href="<%= process.env.BASE_URL %>delete-news?id=<%= n._id %>">
+                                <button type="button" class="btn btn-danger">Delete</button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- /Modal: Delete -->
+                    <% }) %>
+                  <% } %>
 
                 </div>
               </div>

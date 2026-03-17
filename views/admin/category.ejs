@@ -240,65 +240,70 @@
                               </td>
                             </tr>
 
-                            <!-- Modal: Publish/Unpublish -->
-                            <div class="modal fade" id="kt_modal_change_status_category_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                              <div class="modal-dialog" role="document">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title fs-1" id="confirmLabel">Confirmation</h5>
-                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                    </div>
-                                  </div>
-                                  <div class="modal-body">
-                                    <p class="message text-center fs-3 mb-0">
-                                      Are you sure you want to <%= c.status === "Publish" ? "unpublish" : "publish" %> the category <b><%= c.name %></b>?
-                                    </p>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <a href="<%= process.env.BASE_URL %>category-status?id=<%=  c._id %>">
-                                      <button type="button" class="btn <%= c.status === "Publish" ? "btn-danger" : "btn-success" %>">
-                                        <%= c.status === "Publish" ? "UnPublish" : "Publish" %>
-                                      </button>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <!-- Modal: Delete -->
-                            <div class="modal fade" id="kt_modal_delete_category_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                              <div class="modal-dialog">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title fs-2">Delete Confirmation</h5>
-                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                    </div>
-                                  </div>
-                                  <div class="modal-body">
-                                    <p class="text-center fs-3 mb-0">
-                                      Are you sure you want to delete the category <b><%= c.name %></b> and all associated campaigns, sliders, and donors?
-                                    </p>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <a href="<%= process.env.BASE_URL %>delete-category?id=<%= c._id %>">
-                                      <button type="button" class="btn btn-danger">Delete</button>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
                           <% } %>
-                        <% } else { %>
-                          <tr>
-                            <td colspan="5" class="text-center text-gray-500">No category record available.</td>
-                          </tr>
                         <% } %>
                       </tbody>
                     </table>
                   </div>
                   <!--end::Table-->
+
+                  <% if (!category || category.length === 0) { %>
+                    <div class="alert alert-dismissible bg-light-secondary d-flex align-items-center mt-6">
+                      <span class="fs-6 text-gray-700 fw-semibold">No category record available.</span>
+                    </div>
+                  <% } else { %>
+                    <% for (let i = 0; i < category.length; i++) { const c = category[i]; %>
+                      <!-- Modal: Publish/Unpublish -->
+                      <div class="modal fade" id="kt_modal_change_status_category_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog" role="document">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title fs-1" id="confirmLabel">Confirmation</h5>
+                              <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                              </div>
+                            </div>
+                            <div class="modal-body">
+                              <p class="message text-center fs-3 mb-0">
+                                Are you sure you want to <%= c.status === "Publish" ? "unpublish" : "publish" %> the category <b><%= c.name %></b>?
+                              </p>
+                            </div>
+                            <div class="modal-footer">
+                              <a href="<%= process.env.BASE_URL %>category-status?id=<%=  c._id %>">
+                                <button type="button" class="btn <%= c.status === "Publish" ? "btn-danger" : "btn-success" %>">
+                                  <%= c.status === "Publish" ? "UnPublish" : "Publish" %>
+                                </button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Modal: Delete -->
+                      <div class="modal fade" id="kt_modal_delete_category_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title fs-2">Delete Confirmation</h5>
+                              <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                              </div>
+                            </div>
+                            <div class="modal-body">
+                              <p class="text-center fs-3 mb-0">
+                                Are you sure you want to delete the category <b><%= c.name %></b> and all associated campaigns, sliders, and donors?
+                              </p>
+                            </div>
+                            <div class="modal-footer">
+                              <a href="<%= process.env.BASE_URL %>delete-category?id=<%= c._id %>">
+                                <button type="button" class="btn btn-danger">Delete</button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    <% } %>
+                  <% } %>
                 </div>
                 <!--end::Card body-->
               </div>

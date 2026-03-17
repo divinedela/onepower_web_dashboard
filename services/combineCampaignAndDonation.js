@@ -1,81 +1,54 @@
-// Import moment
 const moment = require("moment");
-const util = require("util");
 
-// Import donation and campaign models
-const campaignModel = require("../model/campaignModel");
-const donationModel = require("../model/donationModel");
+// Enrich campaigns with donation totals and time status.
+// campaigns: array of Supabase campaign rows (with fields: id, campaign_amount, starting_date, ending_date, image, gallery)
+// donations: optional pre-fetched donations array with fields (campaign_id, amount, payment_status)
+async function combineCampaignAndDonation(campaigns, donations = []) {
+  const list = Array.isArray(campaigns) ? campaigns : [campaigns];
 
-const combineCampaignAndDonation = async (campaign) => {
-    // Ensure campaign is an array for consistent processing
-    const campaigns = util.isArray(campaign) ? campaign : [campaign];
+  const updated = list.map((c) => {
+    const dons = donations.filter(
+      (d) => String(d.campaign_id) === String(c.id) && d.payment_status === "Successful"
+    );
+    const totalDonationAmount = dons.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+    const remainingAmount = Math.max(0, Number(c.campaign_amount || 0) - totalDonationAmount);
 
-    const updatedCampaigns = await Promise.all(campaigns.map(async (campaign) => {
+    const currentDate = moment();
+    const endDate = moment(c.ending_date).endOf("day");
+    const startDate = moment(c.starting_date);
+    const currentStart = moment().startOf("day");
 
-        // Retrieve donations for the campaign
-        const donations = await donationModel.find({ campaignId: campaign._id });
+    const daysUntilStart = startDate.diff(currentStart, "days");
+    const daysUntilEnd = endDate.diff(currentStart, "days");
 
-        // Calculate total donation and remaining amount
-        const totalDonationAmount = donations
-          .filter((d) => d.payment_status == "Successful")
-          .reduce((sum, { amount = 0 }) => sum + amount, 0);
-        const remainingAmount = Math.max(0, campaign.campaign_amount - totalDonationAmount);
+    let remainingTime;
+    if (daysUntilEnd < 0) remainingTime = "Campaign ended";
+    else if (daysUntilStart > 0) remainingTime = `Upcoming in ${daysUntilStart} days`;
+    else if (daysUntilEnd === 0) {
+      const remainingHours = endDate.diff(currentDate, "hours");
+      remainingTime = remainingHours <= 0 ? "Campaign ended" : `${remainingHours} hours left`;
+    } else remainingTime = `${daysUntilEnd} days left`;
 
-        // Calculate campaign status and remaining time
-        const currentDate = moment();
-        const endDate = moment(campaign.ending_date).endOf('day');
-        const startDate = moment(campaign.starting_date);
-        const currentDateStartOfDay = moment().startOf('day');
+    let newStatus;
+    if (endDate < currentStart) newStatus = "Ended";
+    else if (startDate > currentStart) newStatus = "Upcoming";
+    else newStatus = "Running";
 
-        const daysUntilStart = startDate.diff(currentDateStartOfDay, 'days');
-        const daysUntilEnd = endDate.diff(currentDateStartOfDay, 'days');
+    let gallery = Array.isArray(c.gallery) ? [...c.gallery] : [];
+    if (c.image && !gallery.includes(c.image)) gallery.unshift(c.image);
 
-        let remainingTime;
+    return {
+      ...c,
+      gallery,
+      totalDonationAmount,
+      remainingAmount,
+      totalDonors: dons.length,
+      remainingTime,
+      campaign_status: newStatus,
+    };
+  });
 
-        if (daysUntilEnd < 0) { // Check if the campaign has already ended
-            remainingTime = 'Campaign ended';
-        } else if (daysUntilStart > 0) { // Campaign is upcoming
-            remainingTime = `Upcoming in ${daysUntilStart} days`;
-        } else if (daysUntilEnd === 0) { // Campaign is ending today
-            const remainingHours = endDate.diff(currentDate, 'hours');
-            remainingTime = remainingHours <= 0 ? 'Campaign ended' : `${remainingHours} hours left`;
-        } else { // Campaign is ongoing
-            remainingTime = `${daysUntilEnd} days left`;
-        }
-
-        // Determine new campaign status
-        let newStatus;
-        if (endDate < currentDateStartOfDay) newStatus = "Ended";
-        else if (startDate > currentDateStartOfDay) newStatus = "Upcoming";
-        else newStatus = "Running";
-
-        // Update the status in the database if it changed
-        if (campaign.campaign_status !== newStatus) {
-            const updatedCampaign = await campaignModel.findByIdAndUpdate(
-                campaign._id,
-                { $set: { campaign_status: newStatus } },
-                { new: true }
-            ).populate("categoryId", "_id image name").select("-userId -isUser -status -isApproved")
-            campaign = updatedCampaign;
-        }
-
-        // Include the feature image in the gallery if it exists
-        let gallery = campaign.gallery || []
-        if (campaign.image && !gallery.includes(campaign.image)) {
-            gallery.unshift(campaign.image);
-        }
-
-        // Return enriched campaign data
-        return {
-            ...campaign.toObject(),
-            totalDonationAmount,
-            remainingAmount,
-            totalDonors: donations.length,
-            remainingTime,
-        };
-    }));
-
-    return util.isArray(campaign) ? updatedCampaigns : updatedCampaigns[0];
-};
+  return Array.isArray(campaigns) ? updated : updated[0];
+}
 
 module.exports = combineCampaignAndDonation;

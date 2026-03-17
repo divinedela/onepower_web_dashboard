@@ -27,51 +27,21 @@ const categoryController = require("../controllers/categoryController");
 const bannerController = require("../controllers/bannerController");
 const campaignController = require("../controllers/campaignController");
 const newsController = require("../controllers/newsController");
-const userController = require("../controllers/userController");
 const paymentController = require("../controllers/paymentController");
 const pageController = require("../controllers/pageController");
 const notificationController = require("../controllers/notificationController");
-const currencyController = require("../controllers/currencyController");
-const verificationController = require("../controllers/verificationController");
 
-const dataProvider = (process.env.DATA_PROVIDER || "mongodb").toLowerCase();
-const isSupabaseDataProvider = dataProvider === "supabase";
-const supabaseAllowedAdminRoutes = new Set([
-  "GET /",
-  "POST /",
-  "GET /dashboard",
-  "GET /profile",
-  "GET /edit-profile",
-  "POST /edit-profile",
-  "GET /change-password",
-  "POST /change-password",
-  "GET /add-intro",
-  "POST /add-intro",
-  "GET /intro",
-  "GET /edit-intro",
-  "POST /edit-intro",
-  "GET /delete-intro",
-  "GET /intro-status",
-  "GET /logout",
-]);
-
-routes.use((req, res, next) => {
-  if (!isSupabaseDataProvider) return next();
-
-  const routeKey = `${req.method.toUpperCase()} ${req.path}`;
-  if (supabaseAllowedAdminRoutes.has(routeKey)) return next();
-
-  req.flash(
-    "warning",
-    "This admin module is not migrated to Supabase yet. Available: dashboard, profile, password, intro."
-  );
-  return res.redirect(`${process.env.BASE_URL || "/"}dashboard`);
-});
+// Supabase-only mode; all admin routes are enabled.
 
 // Routes For Login
 routes.get("", isLogout, loginController.loadLogin);
 
 routes.post("", loginController.login);
+
+routes.get("/forgot-password", isLogout, loginController.loadForgotPassword);
+routes.post("/forgot-password", loginController.sendPasswordResetEmail);
+routes.get("/reset-password", isLogout, loginController.loadResetPassword);
+routes.post("/reset-password", loginController.completeResetPassword);
 
 // Routes For Profile
 routes.get("/profile", isLogin, loginController.loadProfile);
@@ -181,13 +151,7 @@ routes.post("/edit-gallery", uploadImage, campaignController.editGalleryImage);
 routes.get("/delete-gallery", isLogin, campaignController.deleteGalleryImage);
 
 // Routes For Donation
-routes.get("/donation", isLogin, campaignController.loadDonation);
-
-//Routes For Donor
-routes.get("/donor", isLogin, userController.loadDonor);
-
-//Routes For User
-routes.get("/user", isLogin, userController.loadUser);
+// (donation admin view removed in Supabase-only cut)
 
 // Routes For Notification
 routes.get("/notification", isLogin, notificationController.loadNotification);
@@ -221,8 +185,6 @@ routes.post(
 //   paymentController.editRazorpayPaymentMethod
 // );
 
-routes.get("/active-user", isLogin, userController.isActivate);
-
 // Routes For Pages
 routes.get("/private-policy", isLogin, pageController.loadPrivatePolicy);
 
@@ -248,24 +210,9 @@ routes.post("/add-about-us", pageController.addAboutUs);
 // routes.post("/revoke-key", verificationController.revokeKey);
 
 // Routes For Currency
-routes.get("/currency", isLogin, currencyController.loadCurrency);
-
-routes.post("/add-currency", currencyController.addCurrency);
-
 // Routes For Mail Config
-routes.get("/mail-config", isLogin, loginController.loadMailConfig);
-
-routes.post("/mail-config", loginController.mailConfig);
-
 //Routes For Logout
 routes.get("/logout", isLogin, loginController.logout);
-
-// Routes For Verification
-routes.get("/verification", isLogin, verificationController.loadVerification);
-
-routes.post("/verification", verificationController.keyVerification);
-
-routes.post("/revoke", verificationController.revokeKey);
 
 routes.get("*", async (req, res) => {
   res.redirect("/");

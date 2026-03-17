@@ -164,130 +164,108 @@
 
                               <!-- Status -->
                               <td class="pe-0">
-                                <% if (isSuperAdmin) { %>
-                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_change_status_banner_<%= i %>">
-                                    <% if (banner[i].status === "Publish") { %>
-                                      <div class="badge badge-success">Publish</div>
-                                    <% } else { %>
-                                      <div class="badge badge-danger">UnPublish</div>
-                                    <% } %>
-                                  </a>
+                                <% if (banner[i].status === "Publish") { %>
+                                  <div class="badge badge-success">Publish</div>
                                 <% } else { %>
-                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>publish/unpublish banner</b>. As a <b>demo admin</b>, you can only view the content.">
-                                    <% if (banner[i].status === "Publish") { %>
-                                      <div class="badge badge-success">Publish</div>
-                                    <% } else { %>
-                                      <div class="badge badge-danger">UnPublish</div>
-                                    <% } %>
-                                  </a>
+                                  <div class="badge badge-danger">UnPublish</div>
                                 <% } %>
                               </td>
 
                               <!-- Actions -->
                               <td class="pe-0">
                                 <div class="d-flex align-items-center">
-                                  <% if (isSuperAdmin) { %>
-                                    <!-- edit -->
-                                    <a href="<%= process.env.BASE_URL %>edit-banner?id=<%= banner[i]._id %>" class="menu-link me-2" title="Edit" data-bs-toggle="tooltip">
-                                      <div class="symbol symbol-40px symbol-circle user-select-none">
-                                        <div class="symbol-label bg-light-primary text-primary">
-                                          <i class="ki-solid ki-pencil fs-2 text-primary"></i>
-                                        </div>
+                                  <a href="<%= process.env.BASE_URL %>edit-banner?id=<%= banner[i]._id %>" class="menu-link me-2" title="Edit" data-bs-toggle="tooltip">
+                                    <div class="symbol symbol-40px symbol-circle user-select-none">
+                                      <div class="symbol-label bg-light-primary text-primary">
+                                        <i class="ki-solid ki-pencil fs-2 text-primary"></i>
                                       </div>
-                                    </a>
-                                    <!-- delete -->
-                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_delete_banner_<%= i %>" title="Delete" data-bs-toggle="tooltip">
-                                      <div class="symbol symbol-40px symbol-circle user-select-none">
-                                        <div class="symbol-label bg-light-danger text-danger">
-                                          <i class="ki-solid ki-trash fs-2 text-danger"></i>
-                                        </div>
+                                    </div>
+                                  </a>
+                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_delete_banner_<%= i %>" title="Delete" data-bs-toggle="tooltip">
+                                    <div class="symbol symbol-40px symbol-circle user-select-none">
+                                      <div class="symbol-label bg-light-danger text-danger">
+                                        <i class="ki-solid ki-trash fs-2 text-danger"></i>
                                       </div>
-                                    </a>
-                                  <% } else { %>
-                                    <!-- edit (no access) -->
-                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>edit banner</b>. As a <b>demo admin</b>, you can only view the content." class="me-2">
-                                      <div class="symbol symbol-40px symbol-circle user-select-none">
-                                        <div class="symbol-label bg-light-primary text-primary">
-                                          <i class="ki-solid ki-pencil fs-2 text-primary"></i>
-                                        </div>
+                                    </div>
+                                  </a>
+                                  <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_change_status_banner_<%= i %>" title="Publish/Unpublish" data-bs-toggle="tooltip" class="ms-2">
+                                    <div class="symbol symbol-40px symbol-circle user-select-none">
+                                      <div class="symbol-label bg-light-warning text-warning">
+                                        <i class="ki-solid ki-switch fs-2 text-warning"></i>
                                       </div>
-                                    </a>
-                                    <!-- delete (no access) -->
-                                    <a role="button" data-bs-toggle="modal" data-bs-target="#kt_modal_no_access" data-message="You don't have permission to <b>delete banner</b>. As a <b>demo admin</b>, you can only view the content.">
-                                      <div class="symbol symbol-40px symbol-circle user-select-none">
-                                        <div class="symbol-label bg-light-danger text-danger">
-                                          <i class="ki-solid ki-trash fs-2 text-danger"></i>
-                                        </div>
-                                      </div>
-                                    </a>
-                                  <% } %>
+                                    </div>
+                                  </a>
                                 </div>
                               </td>
                             </tr>
-
-                            <!-- Modal: Change Status -->
-                            <div class="modal fade" id="kt_modal_change_status_banner_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                              <div class="modal-dialog" role="document">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title fs-1" id="confirmLabel">Confirmation</h5>
-                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                    </div>
-                                  </div>
-                                  <div class="modal-body">
-                                    <p class="message text-center fs-3 mb-0">
-                                      Are you sure you want to <%= banner[i].status === "Publish" ? "unpublish" : "publish" %> the banner <b><%= banner[i].title %></b>?
-                                    </p>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <a href="<%= process.env.BASE_URL %>banner-status?id=<%= banner[i]._id %>">
-                                      <button type="button" class="btn <%= banner[i].status === "Publish" ? "btn-danger" : "btn-success" %>">
-                                        <%= banner[i].status === "Publish" ? "UnPublish" : "Publish" %>
-                                      </button>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <!-- /Modal: Change Status -->
-
-                            <!-- Modal: Delete -->
-                            <div class="modal fade" id="kt_modal_delete_banner_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-                              <div class="modal-dialog">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title fs-2">Delete Confirmation</h5>
-                                    <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
-                                      <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
-                                    </div>
-                                  </div>
-                                  <div class="modal-body">
-                                    <p class="text-center fs-3">
-                                      Are you sure you want to delete the banner <b><%= banner[i].title %></b>?
-                                    </p>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <a href="<%= process.env.BASE_URL %>delete-banner?id=<%= banner[i]._id %>">
-                                      <button type="button" class="btn btn-danger">Delete</button>
-                                    </a>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <!-- /Modal: Delete -->
                           <% } %>
-                        <% } else { %>
-                          <tr>
-                            <td colspan="6" class="text-center py-10">
-                              <span class="text-gray-600">No banner records available.</span>
-                            </td>
-                          </tr>
                         <% } %>
                       </tbody>
                     </table>
                   </div>
                   <!--end::Table-->
+
+                  <% if (!banner || banner.length === 0) { %>
+                    <div class="alert alert-dismissible bg-light-secondary d-flex align-items-center mt-6">
+                      <span class="fs-6 text-gray-700 fw-semibold">No banner records available.</span>
+                    </div>
+                  <% } %>
+
+                  <% if (banner && banner.length) { %>
+                    <% for (let i = 0; i < banner.length; i++) { %>
+                      <!-- Modal: Change Status -->
+                      <div class="modal fade" id="kt_modal_change_status_banner_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog" role="document">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title fs-1" id="confirmLabel">Confirmation</h5>
+                              <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                              </div>
+                            </div>
+                            <div class="modal-body">
+                              <p class="message text-center fs-3 mb-0">
+                                Are you sure you want to <%= banner[i].status === "Publish" ? "unpublish" : "publish" %> the banner <b><%= banner[i].title %></b>?
+                              </p>
+                            </div>
+                            <div class="modal-footer">
+                              <a href="<%= process.env.BASE_URL %>banner-status?id=<%= banner[i]._id %>">
+                                <button type="button" class="btn <%= banner[i].status === "Publish" ? "btn-danger" : "btn-success" %>">
+                                  <%= banner[i].status === "Publish" ? "UnPublish" : "Publish" %>
+                                </button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- /Modal: Change Status -->
+
+                      <!-- Modal: Delete -->
+                      <div class="modal fade" id="kt_modal_delete_banner_<%= i %>" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                        <div class="modal-dialog">
+                          <div class="modal-content">
+                            <div class="modal-header">
+                              <h5 class="modal-title fs-2">Delete Confirmation</h5>
+                              <div class="btn btn-icon btn-sm btn-active-light-primary ms-2" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="ki-duotone ki-cross fs-2"><span class="path1"></span><span class="path2"></span></i>
+                              </div>
+                            </div>
+                            <div class="modal-body">
+                              <p class="text-center fs-3">
+                                Are you sure you want to delete the banner <b><%= banner[i].title %></b>?
+                              </p>
+                            </div>
+                            <div class="modal-footer">
+                              <a href="<%= process.env.BASE_URL %>delete-banner?id=<%= banner[i]._id %>">
+                                <button type="button" class="btn btn-danger">Delete</button>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- /Modal: Delete -->
+                    <% } %>
+                  <% } %>
 
                 </div>
                 <!--end::Card body-->
