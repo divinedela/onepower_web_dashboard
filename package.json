@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "check:syntax": "node --check index.js controllers/supabaseAuthController.js controllers/loginController.js middleware/auth.js routes/apiSupabaseBootstrapRoutes.js services/supabaseAuthProviderService.js services/supabaseUserAuthService.js services/supabaseAdminLoginService.js services/authSecurityService.js",
     "test:integration": "node --test tests/integration/*.test.js",
     "admin:promote": "node scripts/promote-user-admin.js",
