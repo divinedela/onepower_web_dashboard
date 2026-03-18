@@ -184,6 +184,9 @@ routes.post("/getCurrency", supabaseAuthController.getCurrency);
 // Keep paystack return/deeplink callback available in bootstrap mode.
 routes.get("/payments/paystack/return", paymentController.paystackReturn);
 
+// Paystack webhook (signature verified in paymentController)
+routes.post("/webhooks/paystack", paymentController.paystackWebhook);
+
 routes.all("*", (_req, res) => {
   res.status(503).json({
     ok: false,
