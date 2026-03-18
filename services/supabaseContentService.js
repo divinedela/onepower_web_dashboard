@@ -309,6 +309,73 @@ async function listUserDevicesByUserIds(userIds = []) {
   return res.data || [];
 }
 
+// ---------- followers / donors (audiences) ----------
+async function listFollowersByCampaign(campaignId) {
+  if (!campaignId) return [];
+  const res = await client().get("/favourite_campaigns", {
+    params: {
+      select: "user_id",
+      campaign_id: `eq.${campaignId}`,
+    },
+  });
+  return (res.data || []).map((r) => r.user_id).filter(Boolean);
+}
+
+async function listDonorsByCampaign(campaignId) {
+  if (!campaignId) return [];
+  const res = await client().get("/donations", {
+    params: {
+      select: "user_id",
+      campaign_id: `eq.${campaignId}`,
+    },
+  });
+  return (res.data || []).map((r) => r.user_id).filter(Boolean);
+}
+
+// ---------- push rules ----------
+async function listPushRules() {
+  const res = await client().get("/push_rules", {
+    params: { select: "*", order: "updated_at.desc" },
+  });
+  return res.data || [];
+}
+
+async function createPushRule(payload) {
+  const res = await client().post("/push_rules", payload, optsReturn);
+  return res.data?.[0] || null;
+}
+
+async function updatePushRule(id, payload) {
+  const res = await client().patch("/push_rules", payload, {
+    ...optsReturn,
+    params: { id: `eq.${id}`, select: "*", limit: 1 },
+  });
+  return res.data?.[0] || null;
+}
+
+async function deletePushRule(id) {
+  await client().delete("/push_rules", { params: { id: `eq.${id}` } });
+}
+
+async function getLatestPushRuleVersion() {
+  const res = await client().get("/push_rule_versions", {
+    params: { select: "*", order: "version.desc", limit: 1 },
+  });
+  return res.data?.[0] || null;
+}
+
+async function createPushRuleVersion(payload) {
+  const res = await client().post("/push_rule_versions", payload, optsReturn);
+  return res.data?.[0] || null;
+}
+
+async function getPublicPushConfig() {
+  const res = await client().get("/public_push_config", {
+    params: { select: "*" },
+  });
+  return res.data?.[0] || null;
+}
+
 // ---------- users ----------
 async function listRecentUsers(limit = 10) {
   const res = await client().get("/users", {
@@ -371,6 +438,17 @@ module.exports = {
   createNotification,
   listFavouritesByUser,
   listUserDevices,
+  listUserDevicesByUserIds,
+  deleteUserDevicesByTokens,
+  listFollowersByCampaign,
+  listDonorsByCampaign,
+  listPushRules,
+  createPushRule,
+  updatePushRule,
+  deletePushRule,
+  getLatestPushRuleVersion,
+  createPushRuleVersion,
+  getPublicPushConfig,
   listRecentUsers,
   getCampaignDonationStatsForIds,
 };

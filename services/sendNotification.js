@@ -4,7 +4,11 @@ const {
   listUserDevices,
   createNotification,
   listUserDevicesByUserIds,
+  deleteUserDevicesByTokens,
 } = require("../services/supabaseContentService");
+const { evaluate } = require("./pushRuleEvaluator");
+const logger = require("../config/logger");
+const { recordSendSummary } = require("./pushMetricsService");
 
 const INVALID_TOKEN_ERRORS = new Set([
   "messaging/invalid-registration-token",
@@ -47,7 +51,7 @@ async function fetchAllUserToken(title, message) {
 }
 
 // Firebase Push Notification
-async function sendPushNotification(registrationTokens, title, message) {
+async function sendPushNotification(registrationTokens, title, message, data = {}) {
   try {
     const invalidTokens = new Set();
     const batches = chunk(registrationTokens, BATCH_SIZE);
@@ -58,6 +62,7 @@ async function sendPushNotification(registrationTokens, title, message) {
       if (typeof admin.messaging().sendEachForMulticast === "function") {
         const resp = await admin.messaging().sendEachForMulticast({
           notification: { title, body: message },
+          data,
           tokens,
         });
         totalSuccess += resp.successCount;
@@ -75,6 +80,7 @@ async function sendPushNotification(registrationTokens, title, message) {
       const fallbackPromises = tokens.map((token) =>
         admin.messaging().send({
           notification: { title, body: message },
+          data,
           token,
         })
       );
@@ -119,6 +125,50 @@ async function sendAdminNotification(title, message) {
   }
 }
 
+async function sendDataMessage(registrationTokens, dataPayload = {}) {
+  try {
+    const invalidTokens = new Set();
+    const batches = chunk(registrationTokens, BATCH_SIZE);
+    for (const tokens of batches) {
+      if (typeof admin.messaging().sendEachForMulticast === "function") {
+        const resp = await admin.messaging().sendEachForMulticast({
+          data: dataPayload,
+          tokens,
+        });
+        resp.responses.forEach((r, idx) => {
+          if (!r.success) {
+            const code = r.error?.code;
+            if (INVALID_TOKEN_ERRORS.has(code)) invalidTokens.add(tokens[idx]);
+          }
+        });
+      } else {
+        const promises = tokens.map((token) =>
+          admin.messaging().send({
+            data: dataPayload,
+            token,
+          })
+        );
+        const results = await Promise.allSettled(promises);
+        results.forEach((result, idx) => {
+          if (result.status === "rejected") {
+            const code = result.reason?.code;
+            if (INVALID_TOKEN_ERRORS.has(code)) invalidTokens.add(tokens[idx]);
+          }
+        });
+      }
+    }
+    if (invalidTokens.size) {
+      try {
+        await deleteUserDevicesByTokens([...invalidTokens]);
+      } catch (pruneErr) {
+        console.error("Error pruning invalid tokens (data message)", pruneErr);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending data message:", error);
+  }
+}
+
 async function sendToUsers(userIds = [], title, message) {
   if (!Array.isArray(userIds) || !userIds.length) return;
   const rows = await listUserDevicesByUserIds(userIds);
@@ -132,9 +182,51 @@ async function sendToUsers(userIds = [], title, message) {
   await sendPushNotification(tokens, title, message);
 }
 
+async function sendEvent(trigger, context = {}) {
+  try {
+    const evaluated = await evaluate(trigger, context);
+    if (!evaluated.length) {
+      logger.info("sendEvent: no matching rules", { trigger });
+      return;
+    }
+
+    for (const item of evaluated) {
+      const title = item.payload.title || context.title || "Notification";
+      const message = item.payload.body || context.message || "";
+      await createNotification({
+        recipient: "User",
+        title,
+        message,
+      });
+      const dataPayload = {
+        rule_id: item.rule.id || "",
+        trigger,
+        min_app_version: item.rule.min_app_version || "",
+      };
+      await sendPushNotification(item.tokens, title, message, dataPayload);
+      logger.info("sendEvent: notification dispatched", {
+        trigger,
+        ruleId: item.rule.id,
+        tokens: item.tokens.length,
+      });
+      await recordSendSummary({
+        trigger,
+        ruleId: item.rule.id,
+        tokens: item.tokens.length,
+        success: item.tokens.length, // assume success; detailed counts handled in sendPushNotification log
+        failure: 0,
+      });
+    }
+  } catch (err) {
+    logger.error("sendEvent failed", { trigger, err_message: err.message });
+  }
+}
+
 module.exports = {
   fetchAllUserToken,
   sendPushNotification,
+  sendDataMessage,
   sendToUsers,
+  sendEvent,
   sendAdminNotification,
 };

@@ -30,6 +30,7 @@ const newsController = require("../controllers/newsController");
 const paymentController = require("../controllers/paymentController");
 const pageController = require("../controllers/pageController");
 const notificationController = require("../controllers/notificationController");
+const pushRuleController = require("../controllers/pushRuleController");
 
 // Supabase-only mode; all admin routes are enabled.
 
@@ -169,6 +170,13 @@ routes.post(
   isLogin,
   notificationController.sendAllUserNotification
 );
+
+// Push Rules (server-driven)
+routes.get("/push-rules", isLogin, pushRuleController.loadPushRules);
+routes.post("/push-rules", isLogin, pushRuleController.createOrUpdateRule);
+routes.post("/push-rules/:id", isLogin, pushRuleController.createOrUpdateRule);
+routes.post("/push-rules/:id/delete", isLogin, pushRuleController.deleteRule);
+routes.post("/push-rules/publish", isLogin, pushRuleController.publish);
 
 // Routes For Payment Gateway
 // routes.get("/payment-gateway", isLogin, paymentController.loadPaymentGateway);

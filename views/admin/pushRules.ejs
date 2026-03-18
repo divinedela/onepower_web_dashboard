@@ -1,0 +1,180 @@
+<!-- partial:partials/header -->
+<%- include('../layouts/header.ejs') %>
+
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+  <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+    <div id="kt_app_header" class="app-header d-flex flex-column flex-stack">
+      <%- include('../layouts/navbar.ejs') %>
+      <div class="app-header-separator"></div>
+    </div>
+
+    <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+      <div id="kt_app_sidebar" class="app-sidebar flex-column" data-kt-drawer="true" data-kt-drawer-name="app-sidebar" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="250px" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_app_sidebar_mobile_toggle">
+        <%- include('../layouts/sidebar.ejs') %>
+      </div>
+
+      <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+        <div class="d-flex flex-column flex-column-fluid">
+          <div id="kt_app_toolbar" class="app-toolbar pt-5">
+            <div id="kt_app_toolbar_container" class="app-container container-fluid d-flex align-items-stretch">
+              <div class="app-toolbar-wrapper d-flex flex-stack flex-wrap gap-4 w-100">
+                <div class="page-title d-flex flex-column gap-1 me-3 mb-2">
+                  <ul class="breadcrumb breadcrumb-separatorless fw-semibold mb-6">
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">
+                      <a href="#" class="text-gray-500">
+                        <i class="ki-solid ki-setting fs-1 text-gray-400 me-n1"></i>
+                      </a>
+                    </li>
+                    <li class="breadcrumb-item text-gray-700 fw-bold lh-1">Push Rules</li>
+                  </ul>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                  <form method="post" action="/push-rules/publish" class="d-flex align-items-center gap-2">
+                    <input type="text" class="form-control form-control-sm" placeholder="Publish comment (optional)" name="comment" />
+                    <button type="submit" class="btn btn-primary btn-sm">Publish</button>
+                  </form>
+                  <div class="text-muted small">
+                    Published version: <strong><%= published?.version || 0 %></strong>
+                    <% if (published?.published_at) { %>
+                      (<%= new Date(published.published_at).toLocaleString() %>)
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="kt_app_content" class="app-content flex-column-fluid pt-0">
+            <div id="kt_app_content_container" class="app-container container-fluid">
+              <% if(flash?.error && flash.error.length){ %>
+                <div class="alert alert-danger"><%= flash.error %></div>
+              <% } %>
+              <% if(flash?.success && flash.success.length){ %>
+                <div class="alert alert-success"><%= flash.success %></div>
+              <% } %>
+
+              <div class="card mb-8">
+                <div class="card-header"><h3 class="card-title">New / Edit Rule</h3></div>
+                <div class="card-body">
+                  <form method="post" action="/push-rules" class="row g-4">
+                    <div class="col-md-4">
+                      <label class="form-label">Name</label>
+                      <input required name="name" class="form-control" placeholder="Donation success to donor" />
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Trigger</label>
+                      <select name="trigger" class="form-select" required>
+                        <option value="donation_success">donation_success</option>
+                        <option value="donation_failed">donation_failed</option>
+                        <option value="campaign_approved">campaign_approved</option>
+                        <option value="campaign_rejected">campaign_rejected</option>
+                        <option value="campaign_starting_soon">campaign_starting_soon</option>
+                        <option value="campaign_ending_soon">campaign_ending_soon</option>
+                        <option value="campaign_ended">campaign_ended</option>
+                        <option value="target_reached">target_reached</option>
+                        <option value="news_published">news_published</option>
+                        <option value="password_changed">password_changed</option>
+                        <option value="device_new_login">device_new_login</option>
+                        <option value="maintenance">maintenance</option>
+                        <option value="custom_manual">custom_manual</option>
+                      </select>
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label">Status</label>
+                      <select name="status" class="form-select">
+                        <option value="draft">draft</option>
+                        <option value="active">active</option>
+                        <option value="archived">archived</option>
+                      </select>
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label">Priority</label>
+                      <input type="number" name="priority" class="form-control" value="100" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Audience JSON</label>
+                      <textarea name="audience" class="form-control" rows="4" placeholder='{"all":true}'></textarea>
+                      <div class="text-muted small mt-1">Example: {"all":true} or {"user_ids":["uuid"]} or {"followers_of_campaign":"uuid"}</div>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Constraints JSON</label>
+                      <textarea name="constraints" class="form-control" rows="4" placeholder='{"quiet_hours":{"start":"22:00","end":"07:00"}}'></textarea>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Payload JSON</label>
+                      <textarea name="payload" class="form-control" rows="4" placeholder='{"title":"Thanks {{firstname}}","body":"You donated {{amount}}"}'></textarea>
+                      <div class="text-muted small mt-1">Variables use {{key}} from context.</div>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Min App Version</label>
+                      <input name="min_app_version" class="form-control" placeholder="1.0.0" />
+                    </div>
+                    <div class="col-12">
+                      <button type="submit" class="btn btn-primary">Save Rule</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Existing Rules</h3>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Trigger</th>
+                          <th>Status</th>
+                          <th>Priority</th>
+                          <th>Updated</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% if((rules || []).length === 0){ %>
+                          <tr><td colspan="6" class="text-center text-muted py-6">No rules yet</td></tr>
+                        <% } %>
+                        <% (rules || []).forEach(function(rule){ %>
+                          <tr>
+                            <td><%= rule.name %></td>
+                            <td><span class="badge badge-light-primary"><%= rule.trigger %></span></td>
+                            <td><span class="badge badge-light"><%= rule.status %></span></td>
+                            <td><%= rule.priority %></td>
+                            <td><%= new Date(rule.updated_at || rule.created_at).toLocaleString() %></td>
+                            <td class="text-end">
+                              <form method="post" action="/push-rules/<%= rule.id %>" class="d-inline">
+                                <input type="hidden" name="id" value="<%= rule.id %>" />
+                                <input type="hidden" name="name" value="<%= rule.name %>" />
+                                <input type="hidden" name="trigger" value="<%= rule.trigger %>" />
+                                <input type="hidden" name="status" value="<%= rule.status %>" />
+                                <input type="hidden" name="priority" value="<%= rule.priority %>" />
+                                <input type="hidden" name="audience" value='<%- JSON.stringify(rule.audience || {}) %>' />
+                                <input type="hidden" name="constraints" value='<%- JSON.stringify(rule.constraints || {}) %>' />
+                                <input type="hidden" name="payload" value='<%- JSON.stringify(rule.payload || {}) %>' />
+                                <input type="hidden" name="min_app_version" value="<%= rule.min_app_version || '' %>" />
+                                <button class="btn btn-sm btn-light" type="submit">Clone/Edit</button>
+                              </form>
+                              <form method="post" action="/push-rules/<%= rule.id %>/delete" class="d-inline ms-1">
+                                <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                              </form>
+                            </td>
+                          </tr>
+                        <% }) %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../layouts/footer.ejs') %>

@@ -11,6 +11,7 @@ const {
   deleteBannersByNewsId,
 } = require("../services/supabaseContentService");
 const { bucket } = require("../config/firebaseAdmin");
+const { sendEvent } = require("../services/sendNotification");
 
 // --- helpers ---
 const storagePathFromUrl = (urlOrPath = "") => {
@@ -126,7 +127,13 @@ const addNews = async (req, res) => {
     };
     if (campaignId) payload.campaign_id = campaignId;
 
-    await createNews(payload);
+    const saved = await createNews(payload);
+    await sendEvent("news_published", {
+      newsId: saved?.id,
+      title,
+      description,
+      campaignId,
+    });
     return res.redirect(process.env.BASE_URL + "news");
   } catch (error) {
     console.log("addNews error:", error.message);

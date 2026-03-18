@@ -7,6 +7,7 @@ const { createApiRateLimitMiddleware } = require("../services/authSecurityServic
 const { requireRole } = require("../middleware/requireRole");
 const { getAuthUserByAccessToken } = require("../services/supabaseAuthProviderService");
 const { upsertUserDevice } = require("../services/supabaseContentService");
+const { getLatestConfig } = require("../services/pushConfigService");
 
 const routes = express.Router();
 
@@ -61,6 +62,30 @@ routes.get("/health", (_req, res) => {
     mode: "supabase-bootstrap",
     ts: new Date().toISOString(),
   });
+});
+
+// Public push config for mobile clients (server-driven push rules)
+routes.get("/push-config", async (req, res) => {
+  try {
+    const cfg = await getLatestConfig();
+    const etag = cfg.etag || `"${cfg.version || 0}"`;
+    if (req.headers["if-none-match"] === etag) {
+      return res.status(304).end();
+    }
+    res.setHeader("ETag", etag);
+    res.setHeader("Cache-Control", "public, max-age=300");
+    return res.json({
+      ok: true,
+      version: cfg.version || 0,
+      updated_at: cfg.published_at || null,
+      enabled: cfg.enabled !== false,
+      min_app_version: cfg.min_app_version || null,
+      rules: cfg.rules || [],
+    });
+  } catch (error) {
+    console.error("push-config error", error);
+    return res.status(500).json({ ok: false, error: "Failed to load config" });
+  }
 });
 
 // Register / refresh device token for push notifications (Supabase auth bearer)
