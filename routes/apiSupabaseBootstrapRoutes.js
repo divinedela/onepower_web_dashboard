@@ -2,10 +2,12 @@ const express = require("express");
 const paymentController = require("../controllers/paymentController");
 const { getSupabaseEnvStatus } = require("../config/supabaseEnv");
 const supabaseAuthController = require("../controllers/supabaseAuthController");
+const supabaseContentApiController = require("../controllers/supabaseContentApiController");
 const { uploadAvatar } = require("../middleware/upload.single.stream");
 const { createApiRateLimitMiddleware } = require("../services/authSecurityService");
 const { requireRole } = require("../middleware/requireRole");
 const { getAuthUserByAccessToken } = require("../services/supabaseAuthProviderService");
+const { findUserByAuthUserId } = require("../services/supabaseUserAuthService");
 const { upsertUserDevice } = require("../services/supabaseContentService");
 const { getLatestConfig } = require("../services/pushConfigService");
 
@@ -55,6 +57,40 @@ const verifyCheckRateLimit = createApiRateLimitMiddleware({
   message:
     "Too many verification checks. Try again in {retryAfterSec} seconds.",
 });
+
+async function attachSupabaseUser(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+    if (!token) {
+      return res
+        .status(401)
+        .json({ data: { success: 0, message: "Unauthorized", error: 1 } });
+    }
+    const authUser = await getAuthUserByAccessToken(token);
+    if (!authUser?.id) {
+      return res
+        .status(401)
+        .json({ data: { success: 0, message: "Unauthorized", error: 1 } });
+    }
+    const profile = await findUserByAuthUserId(authUser.id);
+    if (!profile?.id) {
+      return res
+        .status(401)
+        .json({ data: { success: 0, message: "Unauthorized", error: 1 } });
+    }
+    req.user = profile;
+    req.authRole = "user";
+    return next();
+  } catch (error) {
+    console.error("attachSupabaseUser error", error?.message || error);
+    return res
+      .status(401)
+      .json({ data: { success: 0, message: "Unauthorized", error: 1 } });
+  }
+}
 
 routes.get("/health", (_req, res) => {
   res.status(200).json({
@@ -180,6 +216,52 @@ routes.post(
   supabaseAuthController.getUserDetails
 );
 routes.post("/getCurrency", supabaseAuthController.getCurrency);
+routes.post("/getAllIntro", supabaseContentApiController.getAllIntro);
+routes.post("/getAllBanner", supabaseContentApiController.getAllBanner);
+routes.post("/getAllNews", supabaseContentApiController.getAllNews);
+routes.post("/getNewsById", supabaseContentApiController.getNewsById);
+routes.post("/getAllCategory", supabaseContentApiController.getAllCategory);
+routes.post("/getAllCampaign", supabaseContentApiController.getAllCampaign);
+routes.post("/getAllEndedCampaign", supabaseContentApiController.getAllEndedCampaign);
+routes.post("/getAllUpcomingCampaign", supabaseContentApiController.getAllUpcomingCampaign);
+routes.post("/getCampaignById", supabaseContentApiController.getCampaignById);
+routes.post("/mostPopulatedCampaign", supabaseContentApiController.mostPopulatedCampaign);
+routes.post("/comingToEndCampaign", supabaseContentApiController.comingToEndCampaign);
+routes.post("/getAllNotification", supabaseContentApiController.getAllNotification);
+routes.post("/getAllPaymentGateway", supabaseContentApiController.getAllPaymentGateway);
+routes.post("/getPage", supabaseContentApiController.getPage);
+routes.post("/getAllUserCampaign", supabaseContentApiController.getAllUserCampaign);
+routes.post("/addCampaign", supabaseContentApiController.addCampaign);
+routes.post("/deleteCampaign", supabaseContentApiController.deleteCampaign);
+routes.post("/donateAmount", supabaseContentApiController.donateAmount);
+routes.post("/getAllDonateHistory", supabaseContentApiController.getAllDonateHistory);
+routes.post("/addFavouriteCampaign", supabaseContentApiController.addFavouriteCampaign);
+routes.post("/getAllFavouriteCampaign", supabaseContentApiController.getAllFavouriteCampaign);
+routes.post(
+  "/deleteFavouriteCampaign",
+  supabaseContentApiController.deleteFavouriteCampaign
+);
+routes.post(
+  "/paystackCreateTx",
+  attachSupabaseUser,
+  paymentController.paystackCreate
+);
+routes.post(
+  "/paystackVerify",
+  attachSupabaseUser,
+  paymentController.paystackVerify
+);
+// Back-compat endpoints expected by the mobile app
+routes.post(
+  "/payments/paystack/create",
+  attachSupabaseUser,
+  paymentController.paystackCreate
+);
+routes.post(
+  "/payments/paystack/verify",
+  attachSupabaseUser,
+  paymentController.paystackVerify
+);
 
 // Keep paystack return/deeplink callback available in bootstrap mode.
 routes.get("/payments/paystack/return", paymentController.paystackReturn);

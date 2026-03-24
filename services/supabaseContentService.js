@@ -183,6 +183,18 @@ async function listDonations(limit = 20) {
   });
   return res.data || [];
 }
+async function listDonationsByUser(userId, limit = 50) {
+  if (!userId) return [];
+  const res = await client().get("/donations", {
+    params: {
+      select: "*",
+      user_id: `eq.${userId}`,
+      order: "created_at.desc",
+      limit,
+    },
+  });
+  return res.data || [];
+}
 async function deleteDonationsByCampaignIds(ids = []) {
   if (!ids.length) return;
   await client().delete("/donations", {
@@ -263,6 +275,36 @@ async function listFavouritesByUser(userId) {
     params: { select: "*", user_id: `eq.${userId}` },
   });
   return res.data || [];
+}
+async function addFavouriteCampaign({ userId, campaignId }) {
+  if (!userId || !campaignId) return null;
+  const res = await client().post(
+    "/favourite_campaigns",
+    {
+      user_id: userId,
+      campaign_id: campaignId,
+    },
+    {
+      headers: {
+        ...optsReturn.headers,
+        Prefer: "resolution=merge-duplicates,return=representation",
+      },
+      params: {
+        on_conflict: "user_id,campaign_id",
+        select: "*",
+      },
+    }
+  );
+  return res.data?.[0] || null;
+}
+async function deleteFavouriteCampaign({ userId, campaignId }) {
+  if (!userId || !campaignId) return;
+  await client().delete("/favourite_campaigns", {
+    params: {
+      user_id: `eq.${userId}`,
+      campaign_id: `eq.${campaignId}`,
+    },
+  });
 }
 
 // ---------- devices ----------
@@ -431,12 +473,15 @@ module.exports = {
   getPaymentGateway,
   upsertPaymentGateway,
   listDonations,
+  listDonationsByUser,
   insertDonation,
   updateDonationByReference,
   getDonationByReference,
   listNotifications,
   createNotification,
   listFavouritesByUser,
+  addFavouriteCampaign,
+  deleteFavouriteCampaign,
   listUserDevices,
   listUserDevicesByUserIds,
   deleteUserDevicesByTokens,
