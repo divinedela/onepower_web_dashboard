@@ -160,28 +160,36 @@ process.on("uncaughtException", (err) => {
   // consider graceful shutdown in production
 });
 
-const host = process.env.HOST || "0.0.0.0";
+const defaultHost = process.env.HOST || "0.0.0.0";
 let port = Number(process.env.PORT || 4000);
 let fallbackUsed = false;
 
-const startServer = (p) => {
-  const server = app.listen(p, host, () => {
-    console.log(`Server started on ${host}:${p}`);
+const startServer = (p, bindHost = defaultHost) => {
+  const server = app.listen(p, bindHost, () => {
+    const addr = server.address();
+    const listenHost = typeof addr === "string" ? addr : addr?.address;
+    const listenPort = typeof addr === "string" ? "" : addr?.port;
+    console.log(`Server started on ${listenHost}:${listenPort}`);
   });
 
   server.on("error", (err) => {
     logger.error("Server listen error", {
       err_message: err.message,
       stack: err.stack,
-      host,
+      host: bindHost,
       port: p,
     });
 
     if (!fallbackUsed && (err.code === "EACCES" || err.code === "EADDRINUSE" || err.code === "EPERM")) {
       fallbackUsed = true;
       const fallbackPort = 0; // OS-assigned
-      logger.warn("Retrying server listen on ephemeral port", { host, previousPort: p });
-      startServer(fallbackPort);
+      const fallbackHost = "127.0.0.1";
+      logger.warn("Retrying server listen on fallback host/port", {
+        host: bindHost,
+        fallbackHost,
+        previousPort: p,
+      });
+      startServer(fallbackPort, fallbackHost);
       return;
     }
 

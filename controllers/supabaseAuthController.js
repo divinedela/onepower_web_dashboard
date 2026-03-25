@@ -1483,6 +1483,7 @@ module.exports = {
   signIn,
   isVerifyAccount,
   forgotPassword,
+  resendOtp,
   resetPassword,
   uploadImage,
   editUserProfile,
