@@ -194,24 +194,29 @@ routes.post(
   supabaseAuthController.forgotPasswordOtpVerification
 );
 routes.post("/resetPassword", resetRateLimit, supabaseAuthController.resetPassword);
+routes.post("/resendOtp", resendRateLimit, supabaseAuthController.resendOtp);
 routes.post("/uploadImage", uploadAvatar, supabaseAuthController.uploadImage);
 routes.post(
   "/editUserProfile",
+  attachSupabaseUser,
   requireRole(["user"]),
   supabaseAuthController.editUserProfile
 );
 routes.post(
   "/changePassword",
+  attachSupabaseUser,
   requireRole(["user"]),
   supabaseAuthController.changePassword
 );
 routes.post(
   "/deleteAccountUser",
+  attachSupabaseUser,
   requireRole(["user"]),
   supabaseAuthController.deleteAccountUser
 );
 routes.post(
   "/getUserDetails",
+  attachSupabaseUser,
   requireRole(["user"]),
   supabaseAuthController.getUserDetails
 );
