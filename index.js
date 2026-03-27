@@ -1,5 +1,22 @@
 // index.js
 require("dotenv").config();
+// Optional Sentry (enabled when SENTRY_DSN is set)
+let Sentry = null;
+const sentryEnabled = !!process.env.SENTRY_DSN;
+if (sentryEnabled) {
+  try {
+    Sentry = require("@sentry/node");
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || "development",
+      tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0),
+      profilesSampleRate: Number(process.env.SENTRY_PROFILES_SAMPLE_RATE || 0),
+    });
+  } catch (e) {
+    console.warn("Sentry disabled (failed to load):", e.message);
+    Sentry = null;
+  }
+}
 // Optional New Relic (opt-in via ENABLE_NEW_RELIC=true)
 let newrelic = { noticeError: () => {} };
 const enableNewRelic =
@@ -48,6 +65,9 @@ if (isProduction) {
 app.use(requestId);
 app.use(morganToWinston);
 app.use(addNrContext);
+if (sentryEnabled && Sentry) {
+  app.use(Sentry.Handlers.requestHandler());
+}
 
 // ---- session ----
 const sessionConfig = {
@@ -99,6 +119,15 @@ app.use("/api", supabaseBootstrapRoutes);
 const adminRoutes = require("./routes/adminRoutes.js");
 app.use(process.env.BASE_URL, adminOriginGuard, adminRoutes);
 
+// Sentry error handler should be before other error middleware
+if (sentryEnabled && Sentry) {
+  app.use(
+    Sentry.Handlers.errorHandler({
+      shouldHandleError: () => true,
+    })
+  );
+}
+
 // 404
 app.use((req, res) => {
   logger.warn("Route not found", { requestId: req.id, url: req.originalUrl });
@@ -116,8 +145,16 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   // local console for dev
   console.log("eerr here", err);
-  const newrelic = require("newrelic");
-  newrelic.noticeError(err, { requestId: req?.id, url: req?.originalUrl });
+
+  try {
+    newrelic.noticeError(err, { requestId: req?.id, url: req?.originalUrl });
+  } catch (_) {}
+
+  if (sentryEnabled && Sentry) {
+    Sentry.captureException(err, {
+      extra: { requestId: req?.id, url: req?.originalUrl },
+    });
+  }
 
   logger.error("Unhandled error", {
     requestId: req?.id,
@@ -140,6 +177,12 @@ app.use((err, req, res, next) => {
 process.on("unhandledRejection", (reason) => {
   try {
     newrelic.noticeError(reason instanceof Error ? reason : new Error(String(reason)));
+    if (sentryEnabled && Sentry) {
+      Sentry.captureException(
+        reason instanceof Error ? reason : new Error(String(reason)),
+        { extra: { type: "unhandledRejection" } }
+      );
+    }
   } catch (_) {}
   logger.error("Unhandled Promise Rejection", {
     reason: reason instanceof Error ? reason.message : String(reason),
@@ -150,6 +193,9 @@ process.on("unhandledRejection", (reason) => {
 process.on("uncaughtException", (err) => {
   try {
     newrelic.noticeError(err);
+    if (sentryEnabled && Sentry) {
+      Sentry.captureException(err, { extra: { type: "uncaughtException" } });
+    }
   } catch (_) {}
   logger.error("Uncaught Exception", {
     err_message: err.message,
