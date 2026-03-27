@@ -6,6 +6,9 @@ const sentryEnabled = !!process.env.SENTRY_DSN;
 if (sentryEnabled) {
   try {
     Sentry = require("@sentry/node");
+    if (!Sentry.Handlers || !Sentry.Handlers.requestHandler) {
+      throw new Error("Sentry Handlers middleware unavailable (version mismatch)");
+    }
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.NODE_ENV || "development",
