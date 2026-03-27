@@ -14,6 +14,12 @@ const { bucket } = require("../config/firebaseAdmin");
 const { fetchAllUserToken } = require("../services/sendNotification");
 const combineCampaignAndDonation = require("../services/combineCampaignAndDonation");
 
+// --- numeric helpers ---
+const toSafeNumber = (value, fallback = 0) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
 // --- helpers ---
 const storagePathFromUrl = (urlOrPath = "") => {
   try {
@@ -53,7 +59,18 @@ const cleanupUploadedReqFiles = async (files) => {
 };
 
 const mapCategory = (c) => (c ? { ...c, _id: c.id, name: c.name } : null);
-const mapCampaign = (c) => (c ? { ...c, _id: c.id, categoryId: c.category_id, userId: c.user_id } : null);
+const mapCampaign = (c) =>
+  c
+    ? {
+        ...c,
+        _id: c.id,
+        categoryId: c.category_id,
+        userId: c.user_id,
+        campaign_amount: toSafeNumber(c.campaign_amount),
+        totalDonationAmount: toSafeNumber(c.totalDonationAmount ?? c.total_donation_amount),
+        totalDonors: toSafeNumber(c.totalDonors ?? c.total_donors),
+      }
+    : null;
 
 // ---------------- Controllers ----------------
 
@@ -98,15 +115,27 @@ const addCampaign = async (req, res) => {
     const name = req.body.name;
     const starting_date = req.body.starting_date;
     const ending_date = req.body.ending_date;
-    const amount = req.body.amount;
+    const amount = Number(req.body.amount);
     const organizer_name = req.body.Organizer_name;
-    const description = req.body.description.replace(/"/g, "&quot;");
-    const notification_title = req.body.notification_title;
-    const notification_message = req.body.notification_message.replace(/"/g, "&quot;");
+    const description = (req.body.description || "").replace(/"/g, "&quot;");
+    const notification_title = req.body.notification_title || "";
+    const notification_message = (req.body.notification_message || "").replace(/"/g, "&quot;");
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      await cleanupUploadedReqFiles(req.files);
+      req.flash("error", "Amount must be a positive number.");
+      return res.redirect(process.env.BASE_URL + "add-campaign");
+    }
 
     const image = req.files?.image?.[0]?.publicUrl || null;
-    const organizer_image = req.files?.organizer_image?.[0]?.publicUrl || null;
+    const organizer_image = req.files?.organizer_image?.[0]?.publicUrl || image;
     const gallery = (req.files?.gallery || []).map((f) => f.publicUrl);
+
+    if (!image || !organizer_image) {
+      await cleanupUploadedReqFiles(req.files);
+      req.flash("error", "Main image and organizer image are required.");
+      return res.redirect(process.env.BASE_URL + "add-campaign");
+    }
 
     const payload = {
       name,
@@ -139,9 +168,11 @@ const addCampaign = async (req, res) => {
 
     return res.redirect(process.env.BASE_URL + "campaign");
   } catch (error) {
-    console.log(error.message);
+    console.log("addCampaign error", error.response?.data || error.message || error);
     await cleanupUploadedReqFiles(req.files);
-    req.flash("error", "Failed to add campaign");
+    const supabaseMessage =
+      error?.response?.data?.message || error?.response?.data?.hint || error.message;
+    req.flash("error", supabaseMessage ? `Failed to add project: ${supabaseMessage}` : "Failed to add project");
     return res.redirect(process.env.BASE_URL + "add-campaign");
   }
 };
@@ -235,7 +266,7 @@ const editCampaign = async (req, res) => {
     const categoryId = req.body.categoryId;
     const starting_date = req.body.starting_date;
     const ending_date = req.body.ending_date;
-    const amount = req.body.amount;
+    const amount = toSafeNumber(req.body.amount);
     const organizer_name = req.body.organizer_name;
     const description = req.body.description.replace(/"/g, "&quot;");
     const oldImage = req.body.oldImage;
@@ -251,6 +282,12 @@ const editCampaign = async (req, res) => {
     if (!category) {
       await cleanupUploadedReqFiles(req.files);
       req.flash("error", "Invalid category.");
+      return res.redirect(process.env.BASE_URL + "edit-campaign?id=" + id);
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      await cleanupUploadedReqFiles(req.files);
+      req.flash("error", "Amount must be a positive number.");
       return res.redirect(process.env.BASE_URL + "edit-campaign?id=" + id);
     }
 

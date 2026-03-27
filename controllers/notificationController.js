@@ -1,10 +1,7 @@
 const { verifyAdminAccess } = require("../config/verification");
 const { fetchAllUserToken } = require("../services/sendNotification");
-const {
-  listNotifications,
-  createNotification,
-  getCurrencyTimezone,
-} = require("../services/supabaseContentService");
+const { listNotifications, createNotification } = require("../services/supabaseContentService");
+const { getCurrencyTimezone } = require("../services/supabaseCurrencyService");
 
 const loadNotification = async (req, res) => {
   try {
@@ -61,16 +58,37 @@ const sendAllUserNotification = async (req, res) => {
 
 const notification = async (_req, res) => {
   try {
-    const notifications = await listNotifications();
-    const timezones = await getCurrencyTimezone();
-    const result = {
+    let notifications = [];
+    let timezones = {};
+    let hadError = false;
+
+    try {
+      notifications = await listNotifications();
+    } catch (e) {
+      console.log("notification list error", e?.response?.status || e.message);
+      hadError = true;
+    }
+
+    try {
+      timezones = (await getCurrencyTimezone()) || {};
+    } catch (e) {
+      console.log("currency timezone fetch error", e?.response?.status || e.message);
+      hadError = true;
+    }
+
+    return res.json({
       notifications,
-      timezones: timezones || {},
-    };
-    return res.json(result);
+      timezones,
+      error: hadError ? "Unable to load notifications" : undefined,
+    });
   } catch (error) {
-    console.log(error.message);
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.log("notification fetch error", error.message);
+    // Return a safe, empty payload so the UI does not break
+    return res.status(200).json({
+      notifications: [],
+      timezones: {},
+      error: "Unable to load notifications",
+    });
   }
 };
 

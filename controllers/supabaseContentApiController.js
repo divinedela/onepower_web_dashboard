@@ -42,6 +42,94 @@ async function resolveUser(req) {
   return profile || null;
 }
 
+// ---------- campaign helpers ----------
+function deriveCampaignLifecycle(campaign) {
+  const now = new Date();
+  const today = new Date(now.toISOString().slice(0, 10)); // midnight today
+
+  const startRaw = campaign.starting_date;
+  const endRaw = campaign.ending_date;
+
+  const start = startRaw ? new Date(startRaw) : null;
+  const end = endRaw ? new Date(endRaw) : null;
+
+  const startValid = !!start && isFinite(start.getTime());
+  const endValid = !!end && isFinite(end.getTime());
+  const endInclusive =
+    endValid ? new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999) : null;
+
+  let campaignStatus = "Upcoming";
+  let remainingTime = "Time not available";
+
+  if (endValid && now > endInclusive) {
+    campaignStatus = "Ended";
+    remainingTime = "Campaign ended";
+    return { campaignStatus, remainingTime };
+  }
+
+  if (startValid && now < start) {
+    campaignStatus = "Upcoming";
+    const diffMs = start.getTime() - today.getTime();
+    const days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    remainingTime = days === 0 ? "Starting soon" : `Upcoming in ${days} day${days === 1 ? "" : "s"}`;
+    return { campaignStatus, remainingTime };
+  }
+
+  // Running branch (has started and not ended)
+  campaignStatus = "Running";
+  if (endValid) {
+    const diffMs = endInclusive.getTime() - now.getTime();
+    const hours = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
+    if (hours < 24) {
+      remainingTime = `${hours} hour${hours === 1 ? "" : "s"} left`;
+    } else {
+      const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      remainingTime = `${days} day${days === 1 ? "" : "s"} left`;
+    }
+  } else {
+    remainingTime = "Time not available";
+  }
+
+  return { campaignStatus, remainingTime };
+}
+
+async function hydrateCampaigns(campaigns = []) {
+  const list = Array.isArray(campaigns) ? campaigns : [campaigns];
+  if (!list.length) return Array.isArray(campaigns) ? [] : null;
+
+  const ids = list.map((c) => c.id).filter(Boolean);
+  const stats = ids.length ? await getCampaignDonationStatsForIds(ids) : [];
+  const statMap = new Map(stats.map((s) => [String(s.campaign_id), s]));
+
+  const enriched = list.map((c) => {
+    const stat = statMap.get(String(c.id));
+    const totalDonationAmount = Number(stat?.total_donation_amount ?? 0);
+    const totalDonors = Number(stat?.total_donors ?? 0);
+    const remainingAmount =
+      stat?.remaining_amount !== undefined
+        ? Number(stat.remaining_amount)
+        : Math.max(0, Number(c.campaign_amount || 0) - totalDonationAmount);
+
+    const gallery = Array.isArray(c.gallery) ? [...c.gallery] : [];
+    const mergedGallery =
+      c.image && !gallery.includes(c.image) ? [c.image, ...gallery] : gallery;
+
+    const { campaignStatus, remainingTime } = deriveCampaignLifecycle(c);
+
+    return {
+      ...c,
+      gallery: mergedGallery,
+      totalDonationAmount,
+      totalDonors,
+      remainingAmount,
+      remainingTime,
+      campaign_status: campaignStatus,
+    };
+  });
+
+  return Array.isArray(campaigns) ? enriched : enriched[0];
+}
+
 // ---------- Content endpoints ----------
 const getAllIntro = async (_req, res) => {
   try {
@@ -170,6 +258,7 @@ const getAllCampaign = async (req, res) => {
         filter: { is_approved: true },
       });
     }
+    campaigns = await hydrateCampaigns(campaigns);
     return res.json(
       responseData({
         success: 1,
@@ -199,11 +288,12 @@ const getCampaignById = async (req, res) => {
         responseData({ success: 0, message: "Campaign not found", error: 1 })
       );
     }
+    const hydrated = await hydrateCampaigns(campaign);
     return res.json(
       responseData({
         success: 1,
         message: "Campaign loaded",
-        extra: { campaign },
+        extra: { campaign: hydrated },
       })
     );
   } catch (e) {
@@ -216,13 +306,11 @@ const getCampaignById = async (req, res) => {
 
 const mostPopulatedCampaign = async (_req, res) => {
   try {
-    const campaigns = await listCampaigns({ filter: { is_approved: true } });
-    const ids = campaigns.map((c) => c.id).filter(Boolean);
-    const stats = ids.length ? await getCampaignDonationStatsForIds(ids) : [];
-    const totals = new Map();
-    stats.forEach((s) => totals.set(s.campaign_id, Number(s.total_amount) || 0));
+    const campaigns = await hydrateCampaigns(
+      await listCampaigns({ filter: { is_approved: true } })
+    );
     const sorted = campaigns.sort(
-      (a, b) => (totals.get(b.id) || 0) - (totals.get(a.id) || 0)
+      (a, b) => (Number(b.totalDonationAmount) || 0) - (Number(a.totalDonationAmount) || 0)
     );
     return res.json(
       responseData({
@@ -241,7 +329,9 @@ const mostPopulatedCampaign = async (_req, res) => {
 
 const comingToEndCampaign = async (_req, res) => {
   try {
-    const campaigns = await listCampaigns({ filter: { is_approved: true } });
+    const campaigns = await hydrateCampaigns(
+      await listCampaigns({ filter: { is_approved: true } })
+    );
     const sorted = campaigns
       .filter((c) => c.ending_date)
       .sort(
@@ -265,15 +355,17 @@ const comingToEndCampaign = async (_req, res) => {
 
 const getAllEndedCampaign = async (_req, res) => {
   try {
-    const campaigns = await listCampaigns({
-      status: "Ended",
-      filter: { is_approved: true },
-    });
+    const campaigns = await hydrateCampaigns(
+      await listCampaigns({
+        filter: { is_approved: true },
+      })
+    );
+    const ended = campaigns.filter((c) => c.campaign_status === "Ended");
     return res.json(
       responseData({
         success: 1,
         message: "Ended campaigns loaded",
-        extra: { campaigns },
+        extra: { campaigns: ended },
       })
     );
   } catch (e) {
@@ -286,15 +378,17 @@ const getAllEndedCampaign = async (_req, res) => {
 
 const getAllUpcomingCampaign = async (_req, res) => {
   try {
-    const campaigns = await listCampaigns({
-      status: "Upcoming",
-      filter: { is_approved: true },
-    });
+    const campaigns = await hydrateCampaigns(
+      await listCampaigns({
+        filter: { is_approved: true },
+      })
+    );
+    const upcoming = campaigns.filter((c) => c.campaign_status === "Upcoming");
     return res.json(
       responseData({
         success: 1,
         message: "Upcoming campaigns loaded",
-        extra: { campaigns },
+        extra: { campaigns: upcoming },
       })
     );
   } catch (e) {
@@ -375,7 +469,9 @@ const getAllUserCampaign = async (req, res) => {
     const campaigns = await listCampaigns({
       filter: { is_user: true, is_approved: true },
     });
-    const mine = campaigns.filter((c) => String(c.user_id) === String(user.id));
+    const mine = (await hydrateCampaigns(campaigns)).filter(
+      (c) => String(c.user_id) === String(user.id)
+    );
     return res.json(
       responseData({
         success: 1,
@@ -411,7 +507,9 @@ const addCampaign = async (req, res) => {
       organizer_name: payload.organizer_name || payload.organizerName || "",
       gallery: payload.gallery || [],
       description: payload.description || "",
-      campaign_status: "Pending",
+      // Supabase enum only allows Upcoming/Running/Ended; default to Upcoming and we
+      // compute the live status on read based on dates.
+      campaign_status: "Upcoming",
       is_user: true,
       is_approved: true,
       user_id: user.id,

@@ -262,7 +262,13 @@ async function listNotifications() {
   const res = await client().get("/notifications", {
     params: { select: "*", order: "created_at.desc" },
   });
-  return res.data || [];
+  // Normalize field names for downstream consumers (web UI, mobile API)
+  return (res.data || []).map((row) => ({
+    ...row,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    is_read: typeof row.is_read === "boolean" ? row.is_read : false,
+  }));
 }
 async function createNotification(payload) {
   const res = await client().post("/notifications", payload, optsReturn);

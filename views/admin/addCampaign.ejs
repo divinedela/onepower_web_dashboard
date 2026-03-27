@@ -370,7 +370,6 @@
                                 id="organizerImageText"
                                 class="form-control form-control-lg file-upload-info"
                                 placeholder="Upload Organizer Image"
-                                required
                                 readonly
                               />
                               <span class="input-group-append d-flex gap-2">
@@ -688,6 +687,41 @@
         galleryInput.value = "";
         galleryText.value = "";
       });
+    }
+
+    // Client-side form validation
+    const form = document.getElementById("kt_modal_add_campaign_form");
+    const amountInput = document.querySelector('input[name="amount"]');
+    const startInput = document.querySelector('input[name="starting_date"]');
+    const endInput = document.querySelector('input[name="ending_date"]');
+
+    function validateForm(event) {
+      const errors = [];
+      const amountVal = Number(amountInput?.value);
+      if (!Number.isFinite(amountVal) || amountVal <= 0) {
+        errors.push("Amount must be a positive number.");
+      }
+      const start = startInput?.value;
+      const end = endInput?.value;
+      if (start && end && end < start) {
+        errors.push("Ending date must be after starting date.");
+      }
+      if (!campaignInput?.files?.length) {
+        errors.push("Main image is required.");
+      }
+      // Allow organizer image to fall back to main image, but warn once
+      if (!organizerInput?.files?.length && campaignInput?.files?.length) {
+        organizerText.value = "Will reuse main image";
+      }
+
+      if (errors.length) {
+        event.preventDefault();
+        alert(errors.join("\\n"));
+      }
+    }
+
+    if (form) {
+      form.addEventListener("submit", validateForm);
     }
   })();
 </script>
