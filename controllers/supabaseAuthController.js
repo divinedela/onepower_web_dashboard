@@ -1180,6 +1180,8 @@ const resetPassword = async (req, res) => {
 const uploadImage = async (req, res) => {
   try {
     const avatar = req.file?.filename;
+    const publicUrl = req.file?.publicUrl;
+
     if (!avatar) {
       return res.json(
         responseData({
@@ -1190,12 +1192,17 @@ const uploadImage = async (req, res) => {
       );
     }
 
+    const imageValue = publicUrl || avatar;
+
     return res.json(
       responseData({
         success: 1,
         message: "Image Uploaded Successfully",
         error: 0,
-        extra: { image: avatar },
+        extra: {
+          image: imageValue,
+          filename: avatar,
+        },
       })
     );
   } catch (_error) {
