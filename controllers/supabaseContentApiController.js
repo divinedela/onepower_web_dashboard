@@ -7,6 +7,7 @@ const {
   listNews,
   getNews,
   listCampaigns,
+  listCampaignsByIds,
   getCampaign,
   createCampaign,
   deleteCampaign,
@@ -118,6 +119,7 @@ async function hydrateCampaigns(campaigns = []) {
 
     return {
       ...c,
+      _id: c.id, // alias for legacy clients expecting Mongo-style key
       gallery: mergedGallery,
       totalDonationAmount,
       totalDonors,
@@ -658,11 +660,18 @@ const getAllFavouriteCampaign = async (req, res) => {
       );
     }
     const favourites = await listFavouritesByUser(user.id);
+    const favIds = favourites.map((f) => f.campaign_id).filter(Boolean);
+
+    const campaignsRaw = favIds.length
+      ? await listCampaignsByIds(favIds)
+      : [];
+
+    const campaigns = await hydrateCampaigns(campaignsRaw);
     return res.json(
       responseData({
         success: 1,
         message: "Favourites loaded",
-        extra: { campaigns: favourites },
+        extra: { campaigns },
       })
     );
   } catch (e) {

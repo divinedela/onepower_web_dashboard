@@ -154,6 +154,17 @@ async function listCampaigns({ status, categoryId, limit, filter = {} } = {}) {
   const res = await client().get("/campaigns", { params });
   return res.data || [];
 }
+
+async function listCampaignsByIds(ids = []) {
+  if (!Array.isArray(ids) || !ids.length) return [];
+  const uniq = [...new Set(ids.filter(Boolean).map(String))];
+  if (!uniq.length) return [];
+  const inList = uniq.map((id) => `"${id}"`).join(",");
+  const res = await client().get("/campaigns", {
+    params: { select: "*", id: `in.(${inList})` },
+  });
+  return res.data || [];
+}
 async function getCampaign(id) {
   const res = await client().get("/campaigns", { params: { select: "*", id: `eq.${id}`, limit: 1 } });
   return res.data?.[0] || null;
@@ -469,6 +480,7 @@ module.exports = {
   deleteNews,
   deleteBannersByNewsId,
   listCampaigns,
+  listCampaignsByIds,
   getCampaign,
   createCampaign,
   updateCampaign,
