@@ -7,6 +7,16 @@ const {
   updateDonationByReference,
 } = require("../services/supabaseContentService");
 
+// Optional Sentry (only if DSN is configured)
+let Sentry = null;
+try {
+  if (process.env.SENTRY_DSN) {
+    Sentry = require("@sentry/node");
+  }
+} catch (_) {
+  Sentry = null;
+}
+
 let appLogger = null;
 try {
   appLogger = require("../middleware/requestLogger").logger;
@@ -30,7 +40,7 @@ const {
 const ps = axios.create({
   baseURL: "https://api.paystack.co",
   headers: {
-    Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+    Authorization: PAYSTACK_SECRET_KEY ? `Bearer ${PAYSTACK_SECRET_KEY}` : "",
     "Content-Type": "application/json",
   },
   timeout: 15000,
@@ -60,14 +70,34 @@ const test = async (_req, res) => {
 // --------- Paystack: Initialize (creates Pending donation in Supabase) ----------
 const paystackCreate = async (req, res) => {
   try {
-    const userId = String(req.user?.id || req.user?._id || "");
+    const userIdRaw = req.user?.id || req.user?._id;
+    if (!userIdRaw) {
+      return res.status(401).json({
+        data: { success: 0, message: "Unauthorized: no user", error: 1 },
+      });
+    }
+    const userId = String(userIdRaw);
     const { campaignId, amountMajor, currency = "GHS", email } = req.body;
     const normalizedCurrency = String(currency || "GHS").toUpperCase();
     const amountMajorNum = Number(amountMajor);
 
-    if (!campaignId || !email || !userId || !amountMajorNum || amountMajorNum <= 0) {
+    const campaignIdStr = String(campaignId || "").trim();
+
+    if (!campaignIdStr || campaignIdStr.toLowerCase() === "null") {
+      return res.json({
+        data: { success: 0, message: "Invalid campaignId", error: 1 },
+      });
+    }
+
+    if (!email || !userId || !amountMajorNum || amountMajorNum <= 0) {
       return res.json({
         data: { success: 0, message: "Missing required fields", error: 1 },
+      });
+    }
+
+    if (!PAYSTACK_SECRET_KEY) {
+      return res.json({
+        data: { success: 0, message: "Paystack secret key not configured", error: 1 },
       });
     }
 
@@ -87,7 +117,7 @@ const paystackCreate = async (req, res) => {
       currency: normalizedCurrency,
       reference,
       callback_url,
-      metadata: { campaignId, userId },
+      metadata: { campaignId: campaignIdStr, userId },
     };
 
     const resp = await ps.post("/transaction/initialize", initPayload);
@@ -120,15 +150,36 @@ const paystackCreate = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("paystackCreate error", e?.response?.data || e.message);
+    const msg =
+      e?.response?.data?.data?.message ||
+      e?.response?.data?.message ||
+      e?.response?.statusText ||
+      e?.message ||
+      "Unknown error";
+    console.error("paystackCreate error", msg, e?.response?.data || "");
+    if (Sentry) {
+      Sentry.captureException(e, {
+        extra: {
+          route: "paystackCreate",
+          requestBody: req.body,
+          responseData: e?.response?.data,
+        },
+      });
+    }
+    log("error", "paystackCreate error", {
+      msg,
+      responseData: e?.response?.data,
+      requestBody: req.body,
+    });
     return res
       .status(500)
-      .json({ data: { success: 0, message: "An error occurred", error: 1 } });
+      .json({ data: { success: 0, message: msg, error: 1 } });
   }
 };
 
 // --------- Paystack: Verify (idempotent) ----------
 const paystackVerify = async (req, res) => {
+  console.log("verifying here", req)
   try {
     const requesterUserId = String(req.user?.id || req.user?._id || "");
     const { reference } = req.body;
@@ -227,6 +278,11 @@ const paystackVerify = async (req, res) => {
     });
   } catch (e) {
     console.error("paystackVerify error", e?.response?.data || e.message);
+    if (Sentry) {
+      Sentry.captureException(e, {
+        extra: { route: "paystackVerify", requestBody: req.body, responseData: e?.response?.data },
+      });
+    }
     return res.json({
       data: {
         success: 0,
@@ -240,6 +296,7 @@ const paystackVerify = async (req, res) => {
 
 // --------- Paystack: Webhook (idempotent) ----------
 const paystackWebhook = async (req, res) => {
+  console.log("paystack webhook called with req", req)
   const requestId = req.id || null;
   const t0 = Date.now();
 

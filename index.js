@@ -4,10 +4,13 @@ require("dotenv").config();
 let Sentry = null;
 const sentryEnabled = !!process.env.SENTRY_DSN;
 if (sentryEnabled) {
+  console.log("sss");
   try {
     Sentry = require("@sentry/node");
     if (!Sentry.Handlers || !Sentry.Handlers.requestHandler) {
-      throw new Error("Sentry Handlers middleware unavailable (version mismatch)");
+      throw new Error(
+        "Sentry Handlers middleware unavailable (version mismatch)",
+      );
     }
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
@@ -87,14 +90,12 @@ const sessionConfig = {
 
 if (!isSupabaseDataProvider) {
   logger.warn(
-    "Running with DATA_PROVIDER=supabase. Only migrated admin routes are enabled; Mongo-backed modules remain disabled."
+    "Running with DATA_PROVIDER=supabase. Only migrated admin routes are enabled; Mongo-backed modules remain disabled.",
   );
   logSupabaseEnvStatus(logger);
 }
 
-app.use(
-  session(sessionConfig)
-);
+app.use(session(sessionConfig));
 
 // flash
 app.use(flash());
@@ -105,11 +106,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   bodyParser.json({
     verify: (req, _res, buf) => {
-      if (req.originalUrl?.startsWith("/api/webhooks/paystack")) {
+      if (
+        req.originalUrl?.startsWith("/api/webhooks/paystack") ||
+        req.originalUrl?.includes("/webhooks/paystack")
+      ) {
         req.rawBody = Buffer.from(buf);
       }
     },
-  })
+  }),
 );
 
 // static
@@ -127,7 +131,7 @@ if (sentryEnabled && Sentry) {
   app.use(
     Sentry.Handlers.errorHandler({
       shouldHandleError: () => true,
-    })
+    }),
   );
 }
 
@@ -166,7 +170,11 @@ app.use((err, req, res, next) => {
     stack: err.stack,
   });
 
-  if (isSupabaseDataProvider || req.xhr || req.originalUrl?.startsWith("/api")) {
+  if (
+    isSupabaseDataProvider ||
+    req.xhr ||
+    req.originalUrl?.startsWith("/api")
+  ) {
     res
       .status(500)
       .json({ error: "Internal Server Error", requestId: req?.id });
@@ -179,11 +187,13 @@ app.use((err, req, res, next) => {
 // process-level safety
 process.on("unhandledRejection", (reason) => {
   try {
-    newrelic.noticeError(reason instanceof Error ? reason : new Error(String(reason)));
+    newrelic.noticeError(
+      reason instanceof Error ? reason : new Error(String(reason)),
+    );
     if (sentryEnabled && Sentry) {
       Sentry.captureException(
         reason instanceof Error ? reason : new Error(String(reason)),
-        { extra: { type: "unhandledRejection" } }
+        { extra: { type: "unhandledRejection" } },
       );
     }
   } catch (_) {}
@@ -229,7 +239,12 @@ const startServer = (p, bindHost = defaultHost) => {
       port: p,
     });
 
-    if (!fallbackUsed && (err.code === "EACCES" || err.code === "EADDRINUSE" || err.code === "EPERM")) {
+    if (
+      !fallbackUsed &&
+      (err.code === "EACCES" ||
+        err.code === "EADDRINUSE" ||
+        err.code === "EPERM")
+    ) {
       fallbackUsed = true;
       const fallbackPort = 0; // OS-assigned
       const fallbackHost = "127.0.0.1";

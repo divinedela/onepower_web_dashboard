@@ -602,11 +602,36 @@ const getAllDonateHistory = async (req, res) => {
       );
     }
     const donations = await listDonationsByUser(user.id, 100);
+
+    // Hydrate each donation with its campaign so the mobile app can render
+    // image, name, and other campaign metadata without an extra round-trip.
+    const campaignIds = donations
+      .map((d) => d.campaign_id)
+      .filter(Boolean)
+      .map(String);
+
+    const campaignsRaw = campaignIds.length ? await listCampaignsByIds(campaignIds) : [];
+    const campaigns = await hydrateCampaigns(campaignsRaw);
+    const campaignMap = new Map(campaigns.map((c) => [String(c.id), c]));
+
+    const enrichedDonations = donations.map((d) => {
+      const campaign = campaignMap.get(String(d.campaign_id)) || null;
+      // Prefer the precise Supabase timestamp; fall back to legacy date field.
+      const donatedAt = d.created_at || d.date || null;
+      return {
+        ...d,
+        date: donatedAt || d.date || null, // keep legacy key used by clients
+        donated_at: donatedAt, // explicit timestamp key
+        campaign, // new descriptive key
+        campaignId: campaign, // legacy key expected by existing mobile UI
+      };
+    });
+
     return res.json(
       responseData({
         success: 1,
         message: "Donations loaded",
-        extra: { donateHistory: donations },
+        extra: { donateHistory: enrichedDonations },
       })
     );
   } catch (e) {
